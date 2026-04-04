@@ -24,7 +24,7 @@ function getCurrencySymbol(currency) {
 /** Determine budget category based on per-person spend and currency */
 function resolveBudgetCategory(budgetPerPerson, currency) {
 
-  const t = thresholds[currency] ?? thresholds.USD;
+  const t = thresholds[currency] ?? thresholds.INR;
   if (budgetPerPerson > t.luxury) return "Luxury";
   if (budgetPerPerson > t.moderate) return "Moderate";
   return "Cheap";

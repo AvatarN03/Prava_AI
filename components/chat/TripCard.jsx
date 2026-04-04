@@ -22,7 +22,7 @@ export const TripCard = ({ trip, onSave, isSaving }) => {
               <span>📅</span> {trip.duration}
             </span>
             <span className="flex items-center gap-1.5 bg-black/20 px-2 py-1 rounded-md">
-              <span>💰</span> {trip.budget || trip.total_estimated_cost} {trip.currency || "USD"}
+              <span>💰</span> {trip.budget || trip.total_estimated_cost} {trip.currency || "INR"}
             </span>
           </div>
         </div>

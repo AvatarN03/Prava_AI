@@ -6,6 +6,11 @@ import { doc, runTransaction, serverTimestamp } from "firebase/firestore";
 
 import { auth, db } from "@/lib/config/firebase";
 
+const getCurrentMonthKey = () => {
+  const now = new Date();
+  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+};
+
 /**
  * Signs in an existing user with email + password.
  */
@@ -36,6 +41,9 @@ export const emailRegisterAction = async ({ email, password, name, username, ava
       username: cleanUsername,
       tripCount: 0,
       subscription: "free",
+      aiAssistantUsageCount: 0,
+      aiAssistantUsageMonth: getCurrentMonthKey(),
+      aiAssistantLastUsedAt: null,
       avatarUrl,
       preferences,
       createdAt: serverTimestamp(),

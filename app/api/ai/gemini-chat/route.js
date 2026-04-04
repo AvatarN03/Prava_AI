@@ -133,7 +133,7 @@ __FIELDS_JSON__{"destination":"Bali, Indonesia","source":"Mumbai, India","days":
         source = "",
         days = 5,
         budget = 50000,
-        currency = "USD",
+        currency = "INR",
         persons = 1,
       } = collectedFields;
 

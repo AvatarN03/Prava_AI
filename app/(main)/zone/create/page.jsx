@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-import { X, Bold, Italic, Link, ArrowLeft, Upload } from 'lucide-react';
+import { X, Bold, Italic, Link, ArrowLeft, Upload, Star } from 'lucide-react';
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
@@ -26,17 +26,66 @@ export default function CreatePostPage() {
         title: '',
         content: '',
         category: '',
-        imageFile: null,
-        imagePreview: null,
+        images: [],
+        mainImageIndex: 0,
     })
 
     const handleImageChange = (e) => {
-        const file = e.target.files[0]
-        if (file && file.type.startsWith('image/')) {
-            setPost({ ...post, imageFile: file, imagePreview: URL.createObjectURL(file) })
-        } else {
+        const files = Array.from(e.target.files || [])
+        const validFiles = files.filter((file) => file.type.startsWith('image/'))
+
+        if (validFiles.length === 0) {
             alert('Please select a valid image file')
+            return
         }
+
+        const newImages = validFiles.map((file) => ({
+            id: `${file.name}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            file,
+            preview: URL.createObjectURL(file),
+        }))
+
+        setPost((prev) => {
+            const nextImages = [...prev.images, ...newImages]
+            return {
+                ...prev,
+                images: nextImages,
+                mainImageIndex: nextImages.length === newImages.length ? 0 : prev.mainImageIndex,
+            }
+        })
+
+        e.target.value = ''
+    }
+
+    const handleRemoveImage = (indexToRemove) => {
+        setPost((prev) => {
+            const removedImage = prev.images[indexToRemove]
+            const nextImages = prev.images.filter((_, index) => index !== indexToRemove)
+            const nextMainIndex = nextImages.length === 0
+                ? 0
+                : indexToRemove === prev.mainImageIndex
+                    ? Math.min(indexToRemove, nextImages.length - 1)
+                    : indexToRemove < prev.mainImageIndex
+                        ? prev.mainImageIndex - 1
+                        : prev.mainImageIndex
+
+            if (removedImage?.preview?.startsWith('blob:')) {
+                URL.revokeObjectURL(removedImage.preview)
+            }
+
+            return {
+                ...prev,
+                images: nextImages,
+                mainImageIndex: nextMainIndex,
+            }
+        })
+    }
+
+    const handleSetMainImage = (index) => {
+        setPost((prev) => ({
+            ...prev,
+            mainImageIndex: index,
+        }))
     }
 
     const formatText = (tag) => {
@@ -180,7 +229,7 @@ export default function CreatePostPage() {
                                 {/* Image upload */}
                                 <div>
                                     <label className="block text-sm font-medium mb-1.5 text-gray-700 dark:text-gray-300">
-                                        Cover Image (optional)
+                                        Post Images (optional)
                                     </label>
 
                                     {/* Hidden file input */}
@@ -188,34 +237,60 @@ export default function CreatePostPage() {
                                         ref={inputRef}
                                         type="file"
                                         accept="image/*"
+                                        multiple
                                         onChange={handleImageChange}
                                         className="hidden"
                                     />
 
-                                    {post.imagePreview ? (
-                                        <div className="relative rounded-md overflow-hidden">
-                                            <img
-                                                src={post.imagePreview}
-                                                alt="Preview"
-                                                className="w-full h-52 object-cover"
-                                            />
-                                            {/* Remove */}
-                                            <button
-                                                type="button"
-                                                onClick={() => setPost({ ...post, imageFile: null, imagePreview: null })}
-                                                className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full"
-                                            >
-                                                <X className="w-4 h-4" />
-                                            </button>
-                                            {/* Change */}
-                                            <button
-                                                type="button"
-                                                onClick={() => inputRef.current?.click()}
-                                                className="absolute bottom-2 right-2 flex items-center gap-1.5 bg-black/60 hover:bg-black/80 text-white text-xs px-3 py-1.5 rounded-md"
-                                            >
-                                                <Upload className="w-3 h-3" />
-                                                Change
-                                            </button>
+                                    {post.images.length > 0 ? (
+                                        <div className="space-y-3">
+                                            <div className="relative rounded-md overflow-hidden border border-gray-200 dark:border-gray-700">
+                                                <img
+                                                    src={post.images[post.mainImageIndex]?.preview}
+                                                    alt="Main preview"
+                                                    className="w-full h-56 object-cover"
+                                                />
+                                                <div className="absolute left-3 top-3 rounded-full bg-black/70 px-3 py-1 text-xs font-medium text-white flex items-center gap-1.5">
+                                                    <Star className="w-3.5 h-3.5 text-yellow-300" />
+                                                    Main image
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => inputRef.current?.click()}
+                                                    className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-black/60 hover:bg-black/80 text-white text-xs px-3 py-1.5 rounded-md"
+                                                >
+                                                    <Upload className="w-3 h-3" />
+                                                    Add More
+                                                </button>
+                                            </div>
+
+                                            <div className="grid grid-cols-3 gap-2">
+                                                {post.images.map((image, index) => (
+                                                    <div
+                                                        key={image.id}
+                                                        className={`relative rounded-md overflow-hidden border-2 ${index === post.mainImageIndex ? 'border-indigo-500 ring-2 ring-indigo-200 dark:ring-indigo-900' : 'border-transparent'}`}
+                                                    >
+                                                        <img
+                                                            src={image.preview}
+                                                            alt={`Upload ${index + 1}`}
+                                                            className="w-full h-20 object-cover cursor-pointer"
+                                                            onClick={() => handleSetMainImage(index)}
+                                                        />
+                                                        {index === post.mainImageIndex && (
+                                                            <div className="absolute left-1 top-1 rounded-full bg-indigo-600 px-2 py-0.5 text-[10px] font-semibold text-white">
+                                                                Main
+                                                            </div>
+                                                        )}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleRemoveImage(index)}
+                                                            className="absolute right-1 top-1 rounded-full bg-red-500/90 text-white p-1"
+                                                        >
+                                                            <X className="w-3 h-3" />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
                                     ) : (
                                         <button
@@ -224,7 +299,7 @@ export default function CreatePostPage() {
                                             className="flex flex-col justify-center items-center w-full h-52 bg-indigo-950 hover:bg-indigo-900 rounded-md cursor-pointer gap-3 transition-colors"
                                         >
                                             <Upload className="w-8 h-8 text-indigo-300" />
-                                            <span className="text-sm text-indigo-300">Click to upload cover image</span>
+                                            <span className="text-sm text-indigo-300">Click to upload one or more images</span>
                                         </button>
                                     )}
                                 </div>

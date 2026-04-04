@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 
-import { X, Bold, Italic, Link, ArrowLeft, Upload } from 'lucide-react';
+import { X, Bold, Italic, Link, ArrowLeft, Upload, Star } from 'lucide-react';
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 
 import { useBlog } from '@/hooks/useBlog';
+import { getBlogImages } from '@/lib/utils/blogHelpers';
 
 import { categories } from '@/lib/constants'
 
@@ -21,8 +22,6 @@ export default function EditPostPage() {
     const inputRef = useRef(null)
 
     const [post, setPost] = useState(null)
-    const [imagePreview, setImagePreview] = useState(null)
-    const [newImageFile, setNewImageFile] = useState(null)
 
     const { getPost, updatePost, loading } = useBlog();
 
@@ -37,8 +36,16 @@ export default function EditPostPage() {
                 return;
             }
 
-            setPost(res.data);
-            setImagePreview(res.data.imageUrl || null);
+            const imageUrls = getBlogImages(res.data);
+            setPost({
+                ...res.data,
+                images: imageUrls.map((url, index) => ({
+                    id: `existing-${index}-${url}`,
+                    url,
+                    preview: url,
+                })),
+                mainImageIndex: Number.isInteger(res.data.mainImageIndex) ? res.data.mainImageIndex : 0,
+            });
 
         };
 
@@ -46,13 +53,61 @@ export default function EditPostPage() {
     }, [id]);
 
     const handleImageChange = (e) => {
-        const file = e.target.files[0]
-        if (file && file.type.startsWith('image/')) {
-            setNewImageFile(file)
-            setImagePreview(URL.createObjectURL(file))
-        } else {
+        const files = Array.from(e.target.files || [])
+        const validFiles = files.filter((file) => file.type.startsWith('image/'))
+
+        if (validFiles.length === 0) {
             alert('Please select a valid image file')
+            return
         }
+
+        const newImages = validFiles.map((file) => ({
+            id: `${file.name}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            file,
+            preview: URL.createObjectURL(file),
+        }))
+
+        setPost((prev) => {
+            const nextImages = [...prev.images, ...newImages]
+            return {
+                ...prev,
+                images: nextImages,
+                mainImageIndex: nextImages.length === newImages.length ? 0 : prev.mainImageIndex,
+            }
+        })
+
+        e.target.value = ''
+    }
+
+    const handleRemoveImage = (indexToRemove) => {
+        setPost((prev) => {
+            const removedImage = prev.images[indexToRemove]
+            const nextImages = prev.images.filter((_, index) => index !== indexToRemove)
+            const nextMainIndex = nextImages.length === 0
+                ? 0
+                : indexToRemove === prev.mainImageIndex
+                    ? Math.min(indexToRemove, nextImages.length - 1)
+                    : indexToRemove < prev.mainImageIndex
+                        ? prev.mainImageIndex - 1
+                        : prev.mainImageIndex
+
+            if (removedImage?.preview?.startsWith('blob:')) {
+                URL.revokeObjectURL(removedImage.preview)
+            }
+
+            return {
+                ...prev,
+                images: nextImages,
+                mainImageIndex: nextMainIndex,
+            }
+        })
+    }
+
+    const handleSetMainImage = (index) => {
+        setPost((prev) => ({
+            ...prev,
+            mainImageIndex: index,
+        }))
     }
 
     const formatText = (tag) => {
@@ -83,7 +138,7 @@ export default function EditPostPage() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        const res = await updatePost({ id, post, newImageFile });
+        const res = await updatePost({ id, post });
 
         if (!res.success) {
             toast.error(res.error);
@@ -109,10 +164,10 @@ export default function EditPostPage() {
         <div className="relative min-h-screen overflow-hidden">
 
             {/* Blurred background layer */}
-            {imagePreview && (
+            {post.images?.[post.mainImageIndex]?.preview && (
                 <div
                     className="absolute inset-0 bg-cover bg-center scale-110 blur-2xl"
-                    style={{ backgroundImage: `url(${imagePreview})` }}
+                    style={{ backgroundImage: `url(${post.images[post.mainImageIndex].preview})` }}
                 />
             )}
             {/* fallback gradient when no image */}
@@ -238,34 +293,55 @@ export default function EditPostPage() {
                                         className="hidden"
                                     />
 
-                                    {imagePreview ? (
-                                        <div className="relative rounded-md overflow-hidden">
-                                            <img
-                                                src={imagePreview}
-                                                alt="Preview"
-                                                className="w-full h-52 object-cover"
-                                            />
-                                            {/* Remove image */}
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setPost({ ...post, imageUrl: '' })
-                                                    setImagePreview(null)
-                                                    setNewImageFile(null)
-                                                }}
-                                                className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full"
-                                            >
-                                                <X className="w-4 h-4" />
-                                            </button>
-                                            {/* Change image */}
-                                            <button
-                                                type="button"
-                                                onClick={() => inputRef.current?.click()}
-                                                className="absolute bottom-2 right-2 flex items-center gap-1.5 bg-black/60 hover:bg-black/80 text-white text-xs px-3 py-1.5 rounded-md"
-                                            >
-                                                <Upload className="w-3 h-3" />
-                                                Change
-                                            </button>
+                                    {post.images.length > 0 ? (
+                                        <div className="space-y-3">
+                                            <div className="relative rounded-md overflow-hidden border border-white/15">
+                                                <img
+                                                    src={post.images[post.mainImageIndex]?.preview}
+                                                    alt="Preview"
+                                                    className="w-full h-52 object-cover"
+                                                />
+                                                <div className="absolute left-3 top-3 rounded-full bg-black/70 px-3 py-1 text-xs font-medium text-white flex items-center gap-1.5">
+                                                    <Star className="w-3.5 h-3.5 text-yellow-300" />
+                                                    Main image
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => inputRef.current?.click()}
+                                                    className="absolute bottom-2 right-2 flex items-center gap-1.5 bg-black/60 hover:bg-black/80 text-white text-xs px-3 py-1.5 rounded-md"
+                                                >
+                                                    <Upload className="w-3 h-3" />
+                                                    Add More
+                                                </button>
+                                            </div>
+
+                                            <div className="grid grid-cols-3 gap-2">
+                                                {post.images.map((image, index) => (
+                                                    <div
+                                                        key={image.id}
+                                                        className={`relative rounded-md overflow-hidden border-2 ${index === post.mainImageIndex ? 'border-indigo-400 ring-2 ring-indigo-200/40' : 'border-white/10'}`}
+                                                    >
+                                                        <img
+                                                            src={image.preview}
+                                                            alt={`Upload ${index + 1}`}
+                                                            className="w-full h-20 object-cover cursor-pointer"
+                                                            onClick={() => handleSetMainImage(index)}
+                                                        />
+                                                        {index === post.mainImageIndex && (
+                                                            <div className="absolute left-1 top-1 rounded-full bg-indigo-600 px-2 py-0.5 text-[10px] font-semibold text-white">
+                                                                Main
+                                                            </div>
+                                                        )}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleRemoveImage(index)}
+                                                            className="absolute right-1 top-1 rounded-full bg-red-500/90 text-white p-1"
+                                                        >
+                                                            <X className="w-3 h-3" />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
                                     ) : (
                                         <button
@@ -274,7 +350,7 @@ export default function EditPostPage() {
                                             className="flex flex-col justify-center items-center w-full h-52 bg-white/10 hover:bg-white/20 border border-dashed border-white/30 rounded-md cursor-pointer gap-3 transition-colors"
                                         >
                                             <Upload className="w-8 h-8 text-gray-400" />
-                                            <span className="text-sm text-gray-400">Click to upload cover image</span>
+                                            <span className="text-sm text-gray-400">Click to upload one or more images</span>
                                         </button>
                                     )}
                                 </div>

@@ -11,7 +11,7 @@ import { Card } from '@/components/ui/card'
 
 import { db } from '@/lib/config/firebase'
 import { formatRelativeDate
-, renderContent } from '@/lib/utils/blogHelpers';
+, renderContent, getMainBlogImage, getBlogImages } from '@/lib/utils/blogHelpers';
 
 import { useAuth } from '@/context/useAuth'
 
@@ -106,74 +106,77 @@ export default function AuthorPostsPage() {
                     </Card>
                 ) : (
                     <div className="space-y-4">
-                        {posts.map((post) => (
-                            <div
-                key={post.id}
-                className="overflow-hidden md:h-60 hover:shadow-lg transition-shadow cursor-pointer rounded-lg bg-gray-800 h-full"
-                onClick={() => router.push(`/zone/${post.id}/view`)}
-              >
-                <div className="flex flex-col md:flex-row h-full">
-                  {post.imageUrl && (
-                    <div className="h-60 md:h-auto md:w-1/3 shrink-0">
-                      <img
-                        src={post.imageUrl}
-                        alt={post.title}
-                        className="w-full h-full object-cover md:object-fill object-center"
-                      />
-                    </div>
-                  )}
+                        {posts.map((post) => {
+                            const mainImage = getMainBlogImage(post)
+                            const imageCount = getBlogImages(post).length
 
-                  <div className={`p-3 md:p-6 flex flex-col justify-between gap-3 ${post.imageUrl ? 'md:w-2/3' : 'w-full'}`}>
-                    {/* Top */}
-                    <div className="space-y-4">
-                      <h3 className="text-xl md:text-2xl xl:text-3xl font-bold text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-                        {post.title}
-                      </h3>
-                      <div className="grid grid-cols-2 gap-2 text-sm text-gray-500 dark:text-gray-400">
-                        <span>✍️ {post.author}</span>
-                        <span className='text-right'>📅 {formatRelativeDate(post.createdAt)}</span>
-                        <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-3xl w-fit text-xs font-medium">
-                          {post.category}
-                        </span>
-                      </div>
-                      <div
-                        className="text-gray-600 flex flex-1 dark:text-gray-400 text-sm line-clamp-2"
-                        dangerouslySetInnerHTML={{
-                          __html:
-                            renderContent((post.content || '').substring(0, 160)) +
-                            ((post.content || '').length > 160 ? '...' : ''),
-                        }}
-                      />
-                    </div>
+                            return (
+                                <div
+                                    key={post.id}
+                                    className="overflow-hidden md:h-60 hover:shadow-lg transition-shadow cursor-pointer rounded-lg bg-gray-800 h-full"
+                                    onClick={() => router.push(`/zone/${post.id}/view`)}
+                                >
+                                    <div className="flex flex-col md:flex-row h-full">
+                                        {mainImage && (
+                                            <div className="h-60 md:h-auto md:w-1/3 shrink-0">
+                                                <img
+                                                    src={mainImage}
+                                                    alt={post.title}
+                                                    className="w-full h-full object-cover md:object-fill object-center"
+                                                />
+                                            </div>
+                                        )}
 
-                    {/* Footer */}
-                    <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
-                      <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 text-sm">
-                        <MessageCircle className="w-4 h-4" />
-                        <span>{(comments[post.id] || []).length} comments</span>
-                      </div>
+                                        <div className={`p-3 md:p-6 flex flex-col justify-between gap-3 ${mainImage ? 'md:w-2/3' : 'w-full'}`}>
+                                            <div className="space-y-4">
+                                                <h3 className="text-xl md:text-2xl xl:text-3xl font-bold text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                                                    {post.title}
+                                                </h3>
+                                                <div className="grid grid-cols-2 gap-2 text-sm text-gray-500 dark:text-gray-400">
+                                                    <span>✍️ {post.author}</span>
+                                                    <span className='text-right'>📅 {formatRelativeDate(post.createdAt)}</span>
+                                                    <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-3xl w-fit text-xs font-medium">
+                                                        {post.category}
+                                                    </span>
+                                                </div>
+                                                <div
+                                                    className="text-gray-600 flex flex-1 dark:text-gray-400 text-sm line-clamp-2"
+                                                    dangerouslySetInnerHTML={{
+                                                        __html:
+                                                            renderContent((post.content || '').substring(0, 160)) +
+                                                            ((post.content || '').length > 160 ? '...' : ''),
+                                                    }}
+                                                />
+                                                {imageCount > 1 && (
+                                                    <p className="text-xs text-gray-400 dark:text-gray-500">{imageCount} photos</p>
+                                                )}
+                                            </div>
 
-                      {post.authorUid === profile?.uid && (
+                                            <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
+                                                <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 text-sm">
+                                                    <MessageCircle className="w-4 h-4" />
+                                                    <span>{(comments[post.id] || []).length} comments</span>
+                                                </div>
 
-                        <Button
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            router.push(`/zone/${post.id}/edit`)
-                          }}
-                          className="flex items-center gap-1"
-                        >
-                          <Edit2 className="w-3 h-3" />
-                          Edit
-                        </Button>
-
-
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-                        ))}
+                                                {post.authorUid === profile?.uid && (
+                                                    <Button
+                                                        size="sm"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            router.push(`/zone/${post.id}/edit`)
+                                                        }}
+                                                        className="flex items-center gap-1"
+                                                    >
+                                                        <Edit2 className="w-3 h-3" />
+                                                        Edit
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )
+                        })}
                     </div>
                 )}
             </div>

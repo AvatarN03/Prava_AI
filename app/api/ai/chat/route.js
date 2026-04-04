@@ -43,7 +43,7 @@ export async function POST(req) {
           "destination": "City, Country",
           "duration": "5 days",
           "budget": 2000,
-          "currency": "USD",
+          "currency": "INR",
           "travelers": 2
         },
         "budget_category": "Cheap | Moderate | Luxury",

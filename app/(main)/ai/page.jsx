@@ -27,7 +27,7 @@ import { useAiChat } from "@/hooks/useAiChat";
 import { SWIPE_THRESHOLD } from "@/lib/constants";
 
 export default function AiPage() {
-  const { user, profile } = useAuth();
+  const { user, profile, setProfile } = useAuth();
 
   const {
     messages,
@@ -43,7 +43,7 @@ export default function AiPage() {
     fetchRecentChats,
     renameChat,
     deleteChat,
-  } = useAiChat({ user, profile });
+  } = useAiChat({ user, profile, setProfile });
 
   const scrollRef = useRef(null);
 
@@ -278,7 +278,7 @@ export default function AiPage() {
 
       {/* ── Main Chat Area ──────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col relative w-full overflow-hidden">
-        <p className="text-xs bg-red-500 p-1 capitalize text-center tracking-wider text-gray-200">Note: provide info within 2 prompts and if failed try later(after 6hrs)</p>
+        <p className="text-xs bg-red-500 p-1 capitalize text-center tracking-wider text-gray-200">Ai usage limit: free users get 1 request/month and pro users get 3 requests/month.</p>
 
         {/* Mobile top bar – shows toggle button */}
         <div className="flex items-center justify-between px-3 pt-2 pb-0 md:hidden">

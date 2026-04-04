@@ -1,6 +1,7 @@
 import { doc, getDoc } from "firebase/firestore";
 
 import { db } from "@/lib/config/firebase";
+import { normalizeBlogPost } from "@/lib/utils/blogHelpers";
 
 export const getPostAction = async ({ postId }) => {
   try {
@@ -12,14 +13,14 @@ export const getPostAction = async ({ postId }) => {
 
     const data = postSnap.data();
 
-    const post = {
+    const post = normalizeBlogPost({
       id: postSnap.id,
       ...data,
       createdAt: data.createdAt?.toDate?.() || new Date(data.createdAt),
       updatedAt:
         data.updatedAt?.toDate?.() ||
         (data.updatedAt ? new Date(data.updatedAt) : null),
-    };
+    });
 
     return { success: true, data: post };
   } catch (error) {

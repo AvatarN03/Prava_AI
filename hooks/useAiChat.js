@@ -11,6 +11,7 @@ import {
   updateDoc,
   deleteDoc,
   getDocs,
+  runTransaction,
   doc,
   setDoc,
   increment,
@@ -26,6 +27,13 @@ const INITIAL_MESSAGE = {
   timestamp: new Date().toISOString(),
 };
 
+const getCurrentMonthKey = () => {
+  const now = new Date();
+  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+};
+
+const getAiUsageLimit = (subscription) => (subscription === "pro" ? 3 : 1);
+
 /**
  * useAiChat
  *
@@ -33,7 +41,7 @@ const INITIAL_MESSAGE = {
  * Uses the Gemini-backed /api/ai/gemini-chat route.
  * Saves trips via createTripAction (same as trips/create-trip).
  */
-export function useAiChat({ user, profile }) {
+export function useAiChat({ user, profile, setProfile }) {
   const router = useRouter();
 
   const [messages, setMessages] = useState([{ ...INITIAL_MESSAGE }]);
@@ -155,11 +163,89 @@ export function useAiChat({ user, profile }) {
     [user, currentChatId]
   );
 
+  const reserveAiUsage = useCallback(async () => {
+    if (!user?.uid) {
+      return {
+        allowed: false,
+        message: "Please sign in to continue.",
+      };
+    }
+
+    const result = await runTransaction(db, async (transaction) => {
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await transaction.get(userRef);
+
+      if (!userSnap.exists()) {
+        throw new Error("User profile not found.");
+      }
+
+      const userData = userSnap.data() || {};
+      const subscription = userData.subscription || "free";
+      const limit = getAiUsageLimit(subscription);
+      const monthKey = getCurrentMonthKey();
+
+      const storedMonth = userData.aiAssistantUsageMonth || "";
+      const storedCount = Number(userData.aiAssistantUsageCount) || 0;
+      const currentCount = storedMonth === monthKey ? storedCount : 0;
+
+      if (currentCount >= limit) {
+        return {
+          allowed: false,
+          message:
+            subscription === "pro"
+              ? "Pro plan allows 3 AI requests per month. Limit reached for this month."
+              : "Free plan allows 1 AI request per month. Upgrade to Pro for more.",
+          used: currentCount,
+          remaining: 0,
+          limit,
+          monthKey,
+          subscription,
+        };
+      }
+
+      const nextCount = currentCount + 1;
+      transaction.update(userRef, {
+        aiAssistantUsageMonth: monthKey,
+        aiAssistantUsageCount: nextCount,
+        aiAssistantLastUsedAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+
+      return {
+        allowed: true,
+        used: nextCount,
+        remaining: Math.max(limit - nextCount, 0),
+        limit,
+        monthKey,
+        subscription,
+      };
+    });
+
+    if (result.allowed && typeof setProfile === "function") {
+      setProfile((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          aiAssistantUsageMonth: result.monthKey,
+          aiAssistantUsageCount: result.used,
+        };
+      });
+    }
+
+    return result;
+  }, [setProfile, user]);
+
   // ── Send message ──────────────────────────────────────────────────────────
 
   const sendMessage = useCallback(
     async (text) => {
       if (!text?.trim()) return;
+
+      const usageCheck = await reserveAiUsage();
+      if (!usageCheck.allowed) {
+        toast.error(usageCheck.message || "Monthly AI usage limit reached.");
+        return;
+      }
 
       const userMsg = {
         id: Date.now(),
@@ -222,7 +308,7 @@ export function useAiChat({ user, profile }) {
         setIsTyping(false);
       }
     },
-    [messages, profile, persistChat]
+    [messages, profile, persistChat, reserveAiUsage]
   );
 
   // ── Save generated trip ───────────────────────────────────────────────────
@@ -244,7 +330,7 @@ export function useAiChat({ user, profile }) {
       //                  dietaryRestrictions, specialRequests } }
       const td = generatedTrip.tripDetails || {};
 
-      const currency = (generatedTrip.currency || td.currency || "USD").toUpperCase();
+      const currency = (generatedTrip.currency || td.currency || "INR").toUpperCase();
 
       // Parse days from "X days" string at top level
       const daysRaw = generatedTrip.duration || td.duration || "1";

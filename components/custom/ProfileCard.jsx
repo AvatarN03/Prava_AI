@@ -149,6 +149,7 @@ const ProfileCard = ({ modal, setModal }) => {
 
       try {
         setIsUploadingImage(true);
+        const previousAvatarUrl = profile?.avatarUrl || "";
 
         const res = await axios.post("/api/media/upload", formData);
 
@@ -156,6 +157,17 @@ const ProfileCard = ({ modal, setModal }) => {
 
         // Use context function to update profile picture
         await updateProfilePicture(data.url);
+
+        if (previousAvatarUrl && previousAvatarUrl !== data.url) {
+          try {
+            await axios.delete("/api/media/upload", {
+              data: { url: previousAvatarUrl },
+            });
+          } catch (cleanupErr) {
+            console.warn("Old avatar cleanup failed:", cleanupErr?.message || cleanupErr);
+          }
+        }
+
         await logActivity({
           userId: profile?.uid,
           action: "UPDATE",

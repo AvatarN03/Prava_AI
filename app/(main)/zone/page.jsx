@@ -1,57 +1,64 @@
 "use client";
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
-import { Search, X, MessageCircle, Plus, Edit2 } from 'lucide-react'
+import { Search, X, MessageCircle, Plus, Edit2 } from "lucide-react";
 
-import { useAuth } from '@/context/useAuth'
-
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-
-import { useBlog } from '@/hooks/useBlog';
-import { formatRelativeDate, renderContent } from '@/lib/utils/blogHelpers';
-
+import { useAuth } from "@/context/useAuth";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { useBlog } from "@/hooks/useBlog";
+import {
+  formatRelativeDate,
+  renderContent,
+  getMainBlogImage,
+  getBlogImages,
+} from "@/lib/utils/blogHelpers";
 
 const BlogListPage = () => {
-  const router = useRouter()
-  const { profile } = useAuth()
+  const router = useRouter();
+  const { profile } = useAuth();
   const { getPosts, loading } = useBlog();
 
-  const [posts, setPosts] = useState([])
-  const [filteredPosts, setFilteredPosts] = useState([])
-  const [comments, setComments] = useState({})
-  const [searchQuery, setSearchQuery] = useState('')
-
-  useEffect(() => { loadData() }, [])
+  const [posts, setPosts] = useState([]);
+  const [filteredPosts, setFilteredPosts] = useState([]);
+  const [comments, setComments] = useState({});
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    if (!searchQuery.trim()) return setFilteredPosts(posts)
-    const q = searchQuery.toLowerCase()
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredPosts(posts);
+      return;
+    }
+
+    const q = searchQuery.toLowerCase();
     setFilteredPosts(
-      posts.filter(
-        (p) =>
-          (p.title || '').toLowerCase().includes(q) ||
-          (p.content || '').toLowerCase().includes(q) ||
-          (p.category || '').toLowerCase().includes(q) ||
-          (p.author || '').toLowerCase().includes(q)
+      posts.filter((post) =>
+        (post.title || "").toLowerCase().includes(q) ||
+        (post.content || "").toLowerCase().includes(q) ||
+        (post.category || "").toLowerCase().includes(q) ||
+        (post.author || "").toLowerCase().includes(q)
       )
-    )
-  }, [searchQuery, posts])
+    );
+  }, [searchQuery, posts]);
 
   const loadData = async () => {
     const res = await getPosts();
     if (!res.success) {
-      console.error('Error loading data:', res.error);
+      console.error("Error loading data:", res.error);
       return;
     }
+
     setPosts(res.data.posts);
     setFilteredPosts(res.data.posts);
     setComments(res.data.commentsMap);
-  }
-
+  };
 
   if (loading) {
     return (
@@ -61,14 +68,12 @@ const BlogListPage = () => {
           <p className="text-gray-600 dark:text-gray-400">Loading blog posts...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-3 md:p-6">
       <div className="space-y-6">
-
-        {/* Header */}
         <div className="text-center">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">✈️ Travel Blog</h1>
           <p className="text-gray-600 dark:text-gray-400 text-md">
@@ -76,9 +81,7 @@ const BlogListPage = () => {
           </p>
         </div>
 
-        {/* Search + New Post */}
         <div className="flex flex-col sm:flex-row gap-3 md:gap-8 justify-between items-center">
-
           <div className="relative flex-1 flex items-center w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
             <Input
@@ -89,121 +92,118 @@ const BlogListPage = () => {
             />
             {searchQuery && (
               <button
-                onClick={() => setSearchQuery('')}
+                onClick={() => setSearchQuery("")}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
                 <X className="w-5 h-5" />
               </button>
             )}
           </div>
+
           {searchQuery && (
             <p className="text-xs text-gray-500 mt-1 pl-1">
-              {filteredPosts.length} result{filteredPosts.length !== 1 ? 's' : ''}
+              {filteredPosts.length} result{filteredPosts.length !== 1 ? "s" : ""}
             </p>
           )}
 
           <Button
-            onClick={() => router.push('/zone/create')}
-            className="flex items-center gap-2  px-5 py-3 self-end md:self-auto"
+            onClick={() => router.push("/zone/create")}
+            className="flex items-center gap-2 px-5 py-3 self-end md:self-auto"
           >
             <Plus className="w-4 h-4" />
             New Post
           </Button>
         </div>
 
-        {/* Posts Grid */}
         <div className="space-y-8">
           {filteredPosts.length === 0 ? (
             <Card className="p-12 text-center">
               <p className="text-gray-500 dark:text-gray-400 text-lg">
                 {searchQuery
-                  ? 'No posts found matching your search.'
-                  : 'No posts yet. Be the first to share your travel story!'}
+                  ? "No posts found matching your search."
+                  : "No posts yet. Be the first to share your travel story!"}
               </p>
               {!searchQuery && (
-                <Button
-                  onClick={() => router.push('/zone/create')}
-
-                >
-                  Write First Post
-                </Button>
+                <Button onClick={() => router.push("/zone/create")}>Write First Post</Button>
               )}
             </Card>
           ) : (
-            filteredPosts.map((post) => (
-              <div
-                key={post.id}
-                className="overflow-hidden md:h-64 hover:shadow-lg transition-shadow cursor-pointer rounded-lg bg-gray-100 dark:bg-gray-800 h-full"
-                onClick={() => router.push(`/zone/${post.id}/view`)}
-              >
-                <div className="flex flex-col md:flex-row h-full">
-                  {post.imageUrl && (
-                    <div className="h-60 md:h-auto md:w-1/3 shrink-0">
-                      <img
-                        src={post.imageUrl}
-                        alt={post.title}
-                        className="w-full h-full object-cover md:object-fill object-center"
-                      />
-                    </div>
-                  )}
+            filteredPosts.map((post) => {
+              const mainImage = getMainBlogImage(post);
+              const imageCount = getBlogImages(post).length;
 
-                  <div className={`p-3 md:p-6 flex flex-col justify-between gap-3 ${post.imageUrl ? 'md:w-2/3' : 'w-full'}`}>
-                    {/* Top */}
-                    <div className="space-y-4">
-                      <h3 className="text-xl md:text-2xl xl:text-3xl font-bold text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-                        {post.title}
-                      </h3>
-                      <div className="grid grid-cols-2 gap-2 text-sm text-gray-500 dark:text-gray-400">
-                        <span>✍️ {post.author}</span>
-                        <span className='text-right'>📅 {formatRelativeDate(post.createdAt)}</span>
-                        <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-3xl w-fit text-xs font-medium">
-                          {post.category}
-                        </span>
+              return (
+                <div
+                  key={post.id}
+                  className="overflow-hidden md:h-64 hover:shadow-lg transition-shadow cursor-pointer rounded-lg bg-gray-100 dark:bg-gray-800 h-full"
+                  onClick={() => router.push(`/zone/${post.id}/view`)}
+                >
+                  <div className="flex flex-col md:flex-row h-full">
+                    {mainImage && (
+                      <div className="h-60 md:h-auto md:w-1/3 shrink-0">
+                        <img
+                          src={mainImage}
+                          alt={post.title}
+                          className="w-full h-full object-cover md:object-fill object-center"
+                        />
                       </div>
-                      <div
-                        className="text-gray-600 flex flex-1 dark:text-gray-400 text-sm line-clamp-2"
-                        dangerouslySetInnerHTML={{
-                          __html:
-                            renderContent((post.content || '').substring(0, 160)) +
-                            ((post.content || '').length > 160 ? '...' : ''),
-                        }}
-                      />
-                    </div>
+                    )}
 
-                    {/* Footer */}
-                    <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
-                      <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 text-sm">
-                        <MessageCircle className="w-4 h-4" />
-                        <span>{(comments[post.id] || []).length} comments</span>
-                      </div>
-
-                      {post.authorUid === profile?.uid && (
-
-                        <Button
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            router.push(`/zone/${post.id}/edit`)
+                    <div className={`p-3 md:p-6 flex flex-col justify-between gap-3 ${mainImage ? "md:w-2/3" : "w-full"}`}>
+                      <div className="space-y-4">
+                        <h3 className="text-xl md:text-2xl xl:text-3xl font-bold text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors truncate" title={post.title}>
+                          {post.title}
+                        </h3>
+                        <div className="grid grid-cols-2 gap-2 text-sm text-gray-500 dark:text-gray-400">
+                          <span>✍️ {post.author}</span>
+                          <span className="text-right">📅 {formatRelativeDate(post.createdAt)}</span>
+                          <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-3xl w-fit text-xs font-medium">
+                            {post.category}
+                          </span>
+                        </div>
+                        <div
+                          className="text-gray-600 flex flex-1 dark:text-gray-400 text-sm line-clamp-2"
+                          dangerouslySetInnerHTML={{
+                            __html:
+                              renderContent((post.content || "").substring(0, 160)) +
+                              ((post.content || "").length > 160 ? "..." : ""),
                           }}
-                          className="flex items-center gap-1"
-                        >
-                          <Edit2 className="w-3 h-3" />
-                          Edit
-                        </Button>
+                        />
+                        {imageCount > 1 && (
+                          <p className="text-xs text-gray-400 dark:text-gray-500">{imageCount} photos</p>
+                        )}
+                      </div>
 
+                      <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
+                        <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 text-sm">
+                          <MessageCircle className="w-4 h-4" />
+                          <span>{(comments[post.id] || []).length} comments</span>
+                        </div>
 
-                      )}
+                        {post.authorUid === profile?.uid && (
+                          <Button
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/zone/${post.id}/edit`);
+                            }}
+                            className="flex items-center gap-1"
+                          >
+                            <Edit2 className="w-3 h-3" />
+                            Edit
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
-
       </div>
     </div>
-  )
-}
+  );
+};
 
 export default BlogListPage;

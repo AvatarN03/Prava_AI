@@ -1,6 +1,7 @@
 import { collection, getDocs } from "firebase/firestore";
 
 import { db } from "@/lib/config/firebase";
+import { normalizeBlogPost } from "@/lib/utils/blogHelpers";
 
 export const getPostsAction = async () => {
   try {
@@ -8,14 +9,14 @@ export const getPostsAction = async () => {
     const posts = postsSnap.docs
       .map((d) => {
         const data = d.data();
-        return {
+        return normalizeBlogPost({
           id: d.id,
           ...data,
           createdAt: data.createdAt?.toDate?.() || new Date(data.createdAt),
           updatedAt:
             data.updatedAt?.toDate?.() ||
             (data.updatedAt ? new Date(data.updatedAt) : null),
-        };
+        });
       })
       .sort((a, b) => b.createdAt - a.createdAt);
 

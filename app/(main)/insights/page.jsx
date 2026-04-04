@@ -3,23 +3,44 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 
-import { collection, doc, getDocs, query, where, updateDoc } from 'firebase/firestore'
 import { toast } from 'sonner'
 import {
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
   LineChart, Line, Legend, PieChart, Pie, Cell,
+  BarChart,
+  Bar,
 } from 'recharts'
 
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/context/useAuth'
 
-import { db } from '@/lib/config/firebase'
-import { getLastMonths, getMonthKey } from '@/lib/utils'
+import { getLastMonths } from '@/lib/utils'
 import { MONTHS_TO_SHOW } from '@/lib/constants'
+import { getInsightsAction } from '@/actions/user/getInsights'
+import { saveBudgetGoalAction } from '@/actions/user/saveBudgetGoal'
 
 const Skeleton = ({ className = '' }) => (
   <div className={`animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700 ${className}`} />
 )
+
+const MONEY_SYMBOL = '₹'
+
+const formatCompactAmount = (value) => {
+  const num = Number(value) || 0
+  const abs = Math.abs(num)
+
+  if (abs >= 1000000) {
+    const formatted = (num / 1000000).toFixed(abs >= 10000000 ? 0 : 1)
+    return `${formatted.replace(/\.0$/, '')}M`
+  }
+
+  if (abs >= 1000) {
+    const formatted = (num / 1000).toFixed(abs >= 10000 ? 0 : 1)
+    return `${formatted.replace(/\.0$/, '')}K`
+  }
+
+  return `${num}`
+}
 
 const StatCard = ({ value, label, icon, color, loading, delay = '' }) => {
   const colorClasses = {
@@ -72,7 +93,7 @@ const ChartTooltip = ({ active, payload, label }) => {
       {payload.map((p) => (
         <p key={p.name} style={{ color: p.color }} className="font-medium">
           {p.name}: {p.name.toLowerCase().includes('spend') || p.name.toLowerCase().includes('goal')
-            ? `$${Number(p.value).toLocaleString()}` : p.value}
+            ? `${MONEY_SYMBOL}${Number(p.value).toLocaleString()}` : p.value}
         </p>
       ))}
     </div>
@@ -108,9 +129,10 @@ export default function InsightsPage() {
     if (!goalNumber || goalNumber <= 0) { toast.error('Please enter a valid goal amount'); return }
     setIsSavingGoal(true)
     try {
-      await updateDoc(doc(db, 'users', user.uid), {
-        monthlyBudgetGoal: goalNumber, savingsGoal: goalNumber,
-      })
+      const res = await saveBudgetGoalAction({ userId: user.uid, goal: goalNumber })
+      if (!res.success) {
+        throw new Error(res.error || 'Could not save budget goal')
+      }
       toast.success('Monthly budget goal saved')
     } catch (err) {
       console.error(err); toast.error('Could not save budget goal')
@@ -128,63 +150,11 @@ export default function InsightsPage() {
       if (!user?.uid) { setLoading(false); return }
       setLoading(true)
       try {
-        const tripsRef = collection(db, 'users', user.uid, 'trips')
-        const tripsSnapshot = await getDocs(query(tripsRef))
-        const trips = tripsSnapshot.docs.map((d) => ({ id: d.id, ...d.data() }))
-
-        const totalSpent = trips.reduce((a, t) => a + Number(t?.userSelection?.budget || 0), 0)
-        const totalDaysTraveling = trips.reduce((a, t) => a + Number(t?.userSelection?.days || 0), 0)
-
-        const destCounts = trips.reduce((a, t) => {
-          const d = t?.userSelection?.destination || 'Unknown'
-          a[d] = (a[d] || 0) + 1; return a
-        }, {})
-        const favoriteDestination = Object.entries(destCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || ''
-        const averageTripCost = trips.length ? totalSpent / trips.length : 0
-
-        const lastMonths = getLastMonths(MONTHS_TO_SHOW)
-        const monthMap = lastMonths.reduce((a, m) => { a[m] = { month: m, trips: 0, spending: 0 }; return a }, {})
-        trips.forEach((t) => {
-          const d = t?.createdAt?.toDate ? t.createdAt.toDate() : new Date()
-          const k = getMonthKey(d)
-          if (!monthMap[k]) monthMap[k] = { month: k, trips: 0, spending: 0 }
-          monthMap[k].trips += 1
-          monthMap[k].spending += Number(t?.userSelection?.budget || 0)
-        })
-        const monthlyTrends = Object.values(monthMap)
-
-        const categoryMap = trips.reduce((a, t) => {
-          const cat = t?.userSelection?.category || 'Other'
-          a[cat] = (a[cat] || 0) + Number(t?.userSelection?.budget || 0); return a
-        }, {})
-        const expenseTotal = Object.values(categoryMap).reduce((s, v) => s + v, 0)
-        const expenseBreakdown = Object.entries(categoryMap)
-          .map(([category, amount]) => ({ category, amount, percentage: expenseTotal ? Math.round((amount / expenseTotal) * 100) : 0 }))
-          .sort((a, b) => b.amount - a.amount)
-
-        const blogSnapshot = await getDocs(query(collection(db, 'blog_posts'), where('authorUid', '==', user.uid)))
-        const activitiesSnapshot = await getDocs(collection(db, 'users', user.uid, 'activities'))
-        const activitiesByMonth = activitiesSnapshot.docs.reduce((a, d) => {
-          const data = d.data()
-          const ca = data?.createdAt?.toDate ? data.createdAt.toDate() : data?.createdAt
-          if (!ca) return a
-          const m = getMonthKey(ca); a[m] = (a[m] || 0) + 1; return a
-        }, {})
-
-        const activitiesCount = typeof profile?.activityCount === 'number' ? profile.activityCount : activitiesSnapshot.size
-        const recentTrips = trips.slice(0, 5).map((t) => ({
-          id: t.id,
-          destination: t?.userSelection?.destination || 'Unknown',
-          cost: Number(t?.userSelection?.budget || 0),
-          date: t?.userSelection?.startDate || (t?.createdAt?.toDate ? t.createdAt.toDate().toISOString().slice(0, 10) : ''),
-          rating: t?.rating || 0,
-        }))
-
-        setStats({
-          trips: trips.length, blogPosts: blogSnapshot.size, activities: activitiesCount,
-          totalSpent, averageTripCost, favoriteDestination, totalDaysTraveling,
-          recentTrips, allTrips: trips, monthlyTrends, expenseBreakdown, activitiesByMonth,
-        })
+        const res = await getInsightsAction({ userId: user.uid, activityCount: profile?.activityCount })
+        if (!res.success) {
+          throw new Error(res.error || 'Failed to load insights')
+        }
+        setStats(res.data)
       } catch (err) {
         console.error(err); toast.error('Failed to load insights. Please try again.')
       } finally { setLoading(false) }
@@ -217,7 +187,7 @@ export default function InsightsPage() {
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard value={stats.trips} label="Total Trips" icon="✈️" color="blue" loading={loading} delay="animate-[fadeIn_0.4s_ease_both_0.05s]" />
-        <StatCard value={`$${stats.totalSpent.toLocaleString()}`} label="Total Spent" icon="💳" color="green" loading={loading} delay="animate-[fadeIn_0.4s_ease_both_0.1s]" />
+        <StatCard value={`${MONEY_SYMBOL}${stats.totalSpent.toLocaleString()}`} label="Total Spent" icon="💳" color="green" loading={loading} delay="animate-[fadeIn_0.4s_ease_both_0.1s]" />
         <StatCard value={stats.blogPosts} label="Blog Posts" icon="✍️" color="purple" loading={loading} delay="animate-[fadeIn_0.4s_ease_both_0.15s]" />
         <StatCard value={stats.activities} label="Activities" icon="🎯" color="orange" loading={loading} delay="animate-[fadeIn_0.4s_ease_both_0.2s]" />
       </div>
@@ -237,7 +207,7 @@ export default function InsightsPage() {
           )}
           {stats.trips > 0 && (
             <span className="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800 font-medium">
-              <span>💰</span> Avg. ${Math.round(stats.averageTripCost).toLocaleString()} / trip
+              <span>💰</span> Avg. {MONEY_SYMBOL}{Math.round(stats.averageTripCost).toLocaleString()} / trip
             </span>
           )}
         </div>
@@ -255,7 +225,7 @@ export default function InsightsPage() {
             </p>
             <div className="flex items-center gap-2">
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">{MONEY_SYMBOL}</span>
                 <input
                   type="number" min={0} value={goalInput}
                   onChange={(e) => setGoalInput(e.target.value)}
@@ -276,17 +246,17 @@ export default function InsightsPage() {
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-500 dark:text-gray-400">Spent this month</span>
               <span className="font-semibold text-gray-800 dark:text-white">
-                ${currentMonthSpending.toLocaleString()}
+                {MONEY_SYMBOL}{currentMonthSpending.toLocaleString()}
                 {goalNumber > 0 && (
-                  <span className="font-normal text-gray-400 dark:text-gray-500"> / ${goalNumber.toLocaleString()}</span>
+                  <span className="font-normal text-gray-400 dark:text-gray-500"> / {MONEY_SYMBOL}{goalNumber.toLocaleString()}</span>
                 )}
               </span>
             </div>
             <div className="h-2 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-600 ease-out ${goalProgress >= 90
-                    ? 'bg-gradient-to-r from-orange-500 to-red-500'
-                    : 'bg-gradient-to-r from-blue-500 to-indigo-500'
+                  ? 'bg-gradient-to-r from-orange-500 to-red-500'
+                  : 'bg-gradient-to-r from-blue-500 to-indigo-500'
                   }`}
                 style={{ width: `${goalProgress}%` }}
               />
@@ -295,7 +265,7 @@ export default function InsightsPage() {
               <span>{goalNumber > 0 ? `${goalProgress.toFixed(1)}% used` : 'Set a goal to track progress'}</span>
               {goalNumber > 0 && goalProgress < 100 && (
                 <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-                  ${(goalNumber - currentMonthSpending).toLocaleString()} remaining
+                  {MONEY_SYMBOL}{(goalNumber - currentMonthSpending).toLocaleString()} remaining
                 </span>
               )}
               {goalNumber > 0 && goalProgress >= 100 && (
@@ -317,7 +287,7 @@ export default function InsightsPage() {
               <LineChart data={chartData} margin={{ top: 6, right: 16, left: -10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,.06)" />
                 <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-                <YAxis tickFormatter={(v) => `$${v}`} tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
+                <YAxis tickFormatter={(v) => `${MONEY_SYMBOL}${formatCompactAmount(v)}`} tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
                 <Tooltip content={<ChartTooltip />} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
                 <Line type="monotone" dataKey="spending" name="Spending" stroke="#6366f1"
@@ -344,17 +314,26 @@ export default function InsightsPage() {
           ) : (
             <div style={{ height: 240 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={stats.expenseBreakdown} dataKey="amount" nameKey="category"
-                    outerRadius={85} innerRadius={50} paddingAngle={3}
-                    label={({ category, percentage }) => `${category} ${percentage}%`}
-                    labelLine={{ stroke: '#d1d5db', strokeWidth: 1 }}>
+                <BarChart data={stats.expenseBreakdown}>
+
+                  <XAxis dataKey="category" />
+                  <YAxis tickFormatter={(v) => `${MONEY_SYMBOL}${formatCompactAmount(v)}`} />
+
+                  <Tooltip
+                    formatter={(v) => `${MONEY_SYMBOL}${Number(v).toLocaleString()}`}
+                    content={<ChartTooltip />}
+                  />
+
+                  <Bar dataKey="amount" radius={[3, 3, 0, 0]}>
                     {stats.expenseBreakdown.map((_, i) => (
-                      <Cell key={i} fill={pieColors[i % pieColors.length]} stroke="none" />
+                      <Cell
+                        key={i}
+                        fill={pieColors[i % pieColors.length]}
+                      />
                     ))}
-                  </Pie>
-                  <Tooltip formatter={(v) => `$${Number(v).toLocaleString()}`} content={<ChartTooltip />} />
-                </PieChart>
+                  </Bar>
+
+                </BarChart>
               </ResponsiveContainer>
             </div>
           )}
@@ -411,7 +390,7 @@ export default function InsightsPage() {
                     </td>
                     <td className="px-3 py-3 text-center border-b border-gray-50 dark:border-gray-800/60 group-last:border-0 hidden md:table-cell">
                       <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800">
-                        ${trip.cost.toLocaleString()}
+                        {MONEY_SYMBOL}{trip.cost.toLocaleString()}
                       </span>
                     </td>
                     <td className="px-3 py-3 text-center text-xs text-gray-400 dark:text-gray-500 border-b border-gray-50 dark:border-gray-800/60 group-last:border-0 hidden lg:table-cell">
