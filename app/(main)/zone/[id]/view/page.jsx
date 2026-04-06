@@ -29,6 +29,7 @@ export default function ViewPostPage() {
   const [newComment, setNewComment] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [displayedImage, setDisplayedImage] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -42,6 +43,7 @@ export default function ViewPostPage() {
       }
 
       setPost(postRes.data);
+      setDisplayedImage(getMainBlogImage(postRes.data));
 
       const commentRes = await getComments({ postId: id });
       if (commentRes.success) {
@@ -141,7 +143,7 @@ export default function ViewPostPage() {
 
   const shouldTruncate = (post.content || "").length > 300;
   const postImages = getBlogImages(post);
-  const mainImage = getMainBlogImage(post);
+  const mainImage = displayedImage || getMainBlogImage(post);
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -239,9 +241,12 @@ export default function ViewPostPage() {
                             >
                               <button
                                 type="button"
-                                onClick={() => handleSetMainImage(index)}
-                                className="block w-full text-left"
-                                title={isPostOwner ? "Set as main image" : "Gallery image"}
+                                onClick={() => {
+                                  setDisplayedImage(imageUrl);         
+                                  if (isPostOwner) handleSetMainImage(index); 
+                                }}
+                                className="block w-full text-left cursor-pointer"
+                                title={isPostOwner ? "Set as main image" : "View image"}
                               >
                                 <img src={imageUrl} alt={`${post.title} ${index + 1}`} className="h-28 w-full object-cover" />
                               </button>
