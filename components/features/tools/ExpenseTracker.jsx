@@ -3,15 +3,29 @@ import React, { useEffect, useState } from "react";
 
 import { DollarSign, Plus, Trash2, Globe } from "lucide-react";
 import axios from "axios";
+import { toast } from "sonner";
+
+import { useAuth } from "@/context/useAuth";
+import { useExpense } from "@/hooks/useExpense";
+import { toDate } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 export default function ExpenseTracker() {
+  const { profile } = useAuth();
+  const { getExpenses, addExpense, deleteExpense, getBuckets, createBucket, loading } = useExpense();
+
   const [expenses, setExpenses] = useState([]);
+  const [buckets, setBuckets] = useState([]);
+  const [newBucketTitle, setNewBucketTitle] = useState("");
   const [exchangeRates, setExchangeRates] = useState({});
   const [loadingRates, setLoadingRates] = useState(true);
+  const [isBootstrapping, setIsBootstrapping] = useState(true);
   const [newExpense, setNewExpense] = useState({
-    category: "",
+    title: "",
+    bucketTitle: "General",
     amount: "",
     currency: "INR",
+    note: "",
   });
   const [globalCurrency, setGlobalCurrency] = useState("INR");
 
@@ -30,16 +44,52 @@ export default function ExpenseTracker() {
 
   useEffect(() => {
     const fetchRates = async () => {
-      const res = await axios.get("/api/tools");
-      const data = res.data;
-
-      console.log(data);
-      setExchangeRates(data);
-      setLoadingRates(false);
+      try {
+        const res = await axios.get("/api/tools");
+        setExchangeRates(res.data || {});
+      } catch (error) {
+        console.error("Failed to fetch currency rates", error);
+      } finally {
+        setLoadingRates(false);
+      }
     };
 
     fetchRates();
   }, []);
+
+  useEffect(() => {
+    const fetchUserExpenseData = async () => {
+      if (!profile?.uid) {
+        setExpenses([]);
+        setBuckets([]);
+        setIsBootstrapping(false);
+        return;
+      }
+
+      setIsBootstrapping(true);
+      const [bucketRes, expenseRes] = await Promise.all([
+        getBuckets({ userId: profile.uid }),
+        getExpenses({ userId: profile.uid }),
+      ]);
+
+      if (bucketRes.success) {
+        const list = bucketRes.data || [];
+        setBuckets(list);
+      }
+
+      if (expenseRes.success) {
+        setExpenses(expenseRes.data || []);
+      }
+
+      if (!bucketRes.success || !expenseRes.success) {
+        toast.error(bucketRes.error || expenseRes.error || "Failed to load expenses");
+      }
+
+      setIsBootstrapping(false);
+    };
+
+    fetchUserExpenseData();
+  }, [profile?.uid]);
 
   const convertCurrency = (amount, fromCurrency, toCurrency) => {
     if (
@@ -59,30 +109,86 @@ export default function ExpenseTracker() {
   };
 
 
-  const addExpense = () => {
-    if (newExpense.category && newExpense.amount) {
-      setExpenses((prev) => [
+  const handleCreateBucket = async () => {
+    if (!profile?.uid) {
+      toast.error("Please sign in to manage expenses");
+      return;
+    }
+
+    if (!newBucketTitle.trim()) {
+      toast.error("Please enter a bucket title");
+      return;
+    }
+
+    const res = await createBucket({ userId: profile.uid, title: newBucketTitle });
+    if (!res.success) {
+      toast.error(res.error || "Failed to create bucket");
+      return;
+    }
+
+    setBuckets((prev) => {
+      const exists = prev.some((bucket) => bucket.titleLower === res.data.titleLower);
+      return exists ? prev : [...prev, res.data].sort((a, b) => a.title.localeCompare(b.title));
+    });
+
+    setNewExpense((prev) => ({ ...prev, bucketTitle: res.data.title }));
+    setNewBucketTitle("");
+    toast.success("Bucket created");
+  };
+
+  const handleAddExpense = async () => {
+    if (!profile?.uid) {
+      toast.error("Please sign in to add expenses");
+      return;
+    }
+
+    const payload = {
+      ...newExpense,
+      amount: parseFloat(newExpense.amount || 0),
+      currency: newExpense.currency || globalCurrency,
+      bucketTitle: newExpense.bucketTitle || "General",
+    };
+
+    const res = await addExpense({ userId: profile.uid, expense: payload });
+    if (!res.success) {
+      toast.error(res.error || "Failed to add expense");
+      return;
+    }
+
+    setExpenses((prev) => [res.data, ...prev]);
+    setNewExpense({
+      title: "",
+      bucketTitle: payload.bucketTitle,
+      amount: "",
+      currency: globalCurrency,
+      note: "",
+    });
+
+    if (!buckets.some((bucket) => bucket.title?.toLowerCase() === payload.bucketTitle.toLowerCase())) {
+      setBuckets((prev) => [
         ...prev,
-        {
-          id: Date.now(),
-          ...newExpense,
-          amount: parseFloat(newExpense.amount),
-          date: new Date().toISOString().split("T")[0],
-        },
+        { title: payload.bucketTitle, titleLower: payload.bucketTitle.toLowerCase() },
       ]);
-      setNewExpense({ category: "", amount: "", currency: globalCurrency });
     }
   };
 
-  const deleteExpense = (id) => {
+  const handleDeleteExpense = async (id) => {
+    if (!profile?.uid) return;
+
+    const res = await deleteExpense({ userId: profile.uid, expenseId: id });
+    if (!res.success) {
+      toast.error(res.error || "Failed to delete expense");
+      return;
+    }
+
     setExpenses((prev) => prev.filter((exp) => exp.id !== id));
   };
 
   // ✅ Wait for rates to load
-  if (loadingRates) {
+  if (loadingRates || isBootstrapping) {
     return (
       <div className="flex justify-center items-center h-40 text-gray-600 dark:text-gray-300">
-        Loading currency rates...
+        Loading expenses...
       </div>
     );
   }
@@ -97,7 +203,7 @@ export default function ExpenseTracker() {
   }, 0);
 
   const getCategoryIcon = (category) => {
-    const lower = category.toLowerCase();
+    const lower = String(category || "").toLowerCase();
     if (lower.includes("food") || lower.includes("restaurant")) return "🍽️";
     if (lower.includes("hotel") || lower.includes("accommodation")) return "🏨";
     if (lower.includes("transport") || lower.includes("flight")) return "✈️";
@@ -153,18 +259,53 @@ export default function ExpenseTracker() {
         {/* ➕ Add New Expense */}
         <div className="bg-gray-100 dark:bg-slate-900 rounded-lg p-2 md:p-4 mb-6 border border-gray-300 dark:border-slate-700">
           <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
-            Add New Expense
+            Create Bucket
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+          <div className="flex flex-col md:flex-row justify-between items-center  gap-2">
             <input
               type="text"
-              placeholder="Category (e.g., Food, Hotel)"
-              value={newExpense.category}
+              placeholder="Bucket title (e.g., Food, Hotel)"
+              value={newBucketTitle}
+              onChange={(e) => setNewBucketTitle(e.target.value)}
+              className="bg-white flex flex-1 w-full  dark:bg-slate-800 text-gray-900 dark:text-white border border-gray-300 dark:border-slate-700 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
+            />
+            <Button
+            className={"ml-auto"}
+              onClick={handleCreateBucket}
+             
+            >
+              <Plus size={20} />
+              Add Bucket
+            </Button>
+          </div>
+        </div>
+
+        <div className="bg-gray-100 dark:bg-slate-900 rounded-lg p-2 md:p-4 mb-6 border border-gray-300 dark:border-slate-700">
+          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+            Add New Expense
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
+            <input
+              type="text"
+              placeholder="Expense title"
+              value={newExpense.title}
               onChange={(e) =>
-                setNewExpense({ ...newExpense, category: e.target.value })
+                setNewExpense({ ...newExpense, title: e.target.value })
               }
               className="bg-white dark:bg-slate-800 text-gray-900 dark:text-white border border-gray-300 dark:border-slate-700 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
             />
+            <select
+              value={newExpense.bucketTitle}
+              onChange={(e) => setNewExpense({ ...newExpense, bucketTitle: e.target.value })}
+              className="bg-white dark:bg-slate-800 text-gray-900 dark:text-white border border-gray-300 dark:border-slate-700 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
+            >
+              <option value="General">General</option>
+              {buckets.map((bucket) => (
+                <option key={bucket.id || bucket.titleLower || bucket.title} value={bucket.title}>
+                  {bucket.title}
+                </option>
+              ))}
+            </select>
             <input
               type="number"
               placeholder="Amount"
@@ -172,11 +313,21 @@ export default function ExpenseTracker() {
               onChange={(e) =>
                 setNewExpense({ ...newExpense, amount: e.target.value })
               }
-              onKeyPress={(e) => e.key === "Enter" && addExpense()}
+              onKeyDown={(e) => e.key === "Enter" && handleAddExpense()}
               className="bg-white dark:bg-slate-800 text-gray-900 dark:text-white border border-gray-300 dark:border-slate-700 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
             />
+            <select
+              value={newExpense.currency}
+              onChange={(e) => setNewExpense({ ...newExpense, currency: e.target.value })}
+              className="bg-white dark:bg-slate-800 text-gray-900 dark:text-white border border-gray-300 dark:border-slate-700 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
+            >
+              {currencies.map((curr) => (
+                <option key={curr} value={curr}>{curr}</option>
+              ))}
+            </select>
             <button
-              onClick={addExpense}
+              onClick={handleAddExpense}
+              disabled={loading}
               className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 font-medium transition-colors flex items-center justify-center gap-2"
             >
               <Plus size={20} />
@@ -219,10 +370,10 @@ export default function ExpenseTracker() {
                       </div>
                       <div>
                         <p className="font-semibold text-lg text-gray-900 dark:text-white">
-                          {expense.category}
+                          {expense.title}
                         </p>
                         <p className="text-sm text-gray-500 dark:text-slate-400">
-                          {expense.date}
+                          {toDate(expense.createdAt)} | {expense.bucketTitle || "General"}
                         </p>
                       </div>
                     </div>
@@ -240,7 +391,7 @@ export default function ExpenseTracker() {
                         )}
                       </div>
                       <button
-                        onClick={() => deleteExpense(expense.id)}
+                        onClick={() => handleDeleteExpense(expense.id)}
                         className="text-red-500 hover:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/20 p-2 rounded-lg transition-colors"
                         aria-label="Delete expense"
                       >
