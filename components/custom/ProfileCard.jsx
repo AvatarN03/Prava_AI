@@ -46,11 +46,14 @@ import { logActivity } from "@/lib/services/firestore";
 
 
 const ProfileCard = ({ modal, setModal }) => {
-  const { profile, logout, updateProfilePicture, updatePreferences, user } = useAuth();
+  const { profile, logout, updateProfilePicture, updatePreferences, updateDisplayName, user } = useAuth();
   const displayName = profile?.name || user?.displayName || "";
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const fileRef = useRef(null);
+  const [editName, setEditName] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
+  const [isSavingName, setIsSavingName] = useState(false);
   const [editPrefs, setEditPrefs] = useState(false);
   const [prefs, setPrefs] = useState([]);
   const [savingPrefs, setSavingPrefs] = useState(false);
@@ -68,6 +71,10 @@ const ProfileCard = ({ modal, setModal }) => {
   const hasCurrentUsage = profile?.aiAssistantUsageMonth === currentMonthKey;
   const aiUsageCount = hasCurrentUsage ? Number(profile?.aiAssistantUsageCount || 0) : 0;
   const aiUsageRemaining = Math.max(aiUsageLimit - aiUsageCount, 0);
+
+  useEffect(() => {
+    setNameDraft(profile?.name || user?.displayName || "");
+  }, [profile?.name, user?.displayName, modal]);
 
   useEffect(() => {
 
@@ -239,6 +246,26 @@ const ProfileCard = ({ modal, setModal }) => {
     }, 2000)
   }
 
+  const handleSaveName = async () => {
+    const nextName = nameDraft.trim();
+
+    if (!nextName || nextName.length < 2 || nextName.length > 40) {
+      toast.error("Name must be between 2 and 40 characters");
+      return;
+    }
+
+    setIsSavingName(true);
+    try {
+      await updateDisplayName(nextName);
+      toast.success("Display name updated");
+      setEditName(false);
+    } catch (error) {
+      toast.error(error.message || "Failed to update display name");
+    } finally {
+      setIsSavingName(false);
+    }
+  };
+
   return (
     <Dialog open={modal} onOpenChange={setModal}>
       <DialogContent className="sm:max-w-[500px] h-[80vh] overflow-y-auto p-0 scrollbar-gradient">
@@ -296,10 +323,10 @@ const ProfileCard = ({ modal, setModal }) => {
           <div className="absolute top-1/2 -translate-y-1/2 right-4">
             {profile?.subscription === "pro" ? (
               <div className="flex items-center gap-2 bg-gradient-to-r from-yellow-500/20 to-yellow-600/20 border border-yellow-500/30 px-3 py-2 rounded-lg">
-                <Crown className="w-5 h-5 text-yellow-500" />
+                <Crown className="w-5 h-5 text-yellow-700  dark:text-yellow-500" />
                 <div className="flex flex-col leading-tight">
-                  <span className="text-xs text-yellow-400 font-semibold">Pro Plan</span>
-                  <span className="text-[11px] text-gray-400">Premium Access</span>
+                  <span className="text-xs text-yellow-600 dark:text-yellow-400 font-semibold">Pro Plan</span>
+                  <span className="text-[11px] text-gray-600 dark:text-gray-400">Premium Access</span>
                 </div>
               </div>
             ) : (
@@ -458,14 +485,58 @@ const ProfileCard = ({ modal, setModal }) => {
           {/* Account Details */}
           <div className="space-y-4">
             <div className="grid gap-3">
-              <Label htmlFor="name-display" className="flex items-center gap-2">
-                <User className="w-4 h-4 text-blue-600" />
-                Display Name
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="name-display" className="flex items-center gap-2">
+                  <User className="w-4 h-4 text-blue-600" />
+                  Display Name
+                </Label>
+
+                {!editName ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setEditName(true)}
+                    className="h-8 text-blue-600 hover:text-blue-700"
+                  >
+                    <Edit2 className="w-3 h-3 mr-1" />
+                    Edit
+                  </Button>
+                ) : (
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={handleSaveName}
+                      disabled={isSavingName}
+                    >
+                      {isSavingName ? (
+                        <>
+                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                          Saving
+                        </>
+                      ) : (
+                        "Save"
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setEditName(false);
+                        setNameDraft(profile?.name || user?.displayName || "");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                )}
+              </div>
+
               <Input
                 id="name-display"
-                value={profile?.name || ""}
-                readOnly
+                value={editName ? nameDraft : (profile?.name || "")}
+                onChange={(e) => setNameDraft(e.target.value)}
+                readOnly={!editName}
+                maxLength={40}
                 className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
               />
             </div>

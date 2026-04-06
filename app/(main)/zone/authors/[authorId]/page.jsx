@@ -112,7 +112,7 @@ export default function AuthorPostsPage() {
                                                     {post.title}
                                                 </h3>
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-500 dark:text-gray-400">
-                                                    <span>✍️ {post.author}</span>
+                                                    <span>✍️ @{post.authorUsername || post.author || "anonymous"}</span>
                                                     <span className='text-right'>📅 {formatRelativeDate(post.createdAt)}</span>
                                                     <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-3xl w-fit text-xs font-medium">
                                                         {post.category}

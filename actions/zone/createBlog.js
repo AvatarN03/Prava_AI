@@ -60,6 +60,7 @@ export const createPostAction = async ({ post, profile }) => {
       mainImageUrl,
       mainImageIndex,
       authorUid: profile?.uid,
+      authorUsername: profile?.username || "",
       searchTitle: normalizeSearchText(post.title),
       searchCategory: normalizeSearchText(post.category),
       searchAuthor: normalizeSearchText(profile?.name || "Anonymous"),

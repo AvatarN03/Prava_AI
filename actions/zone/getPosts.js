@@ -84,6 +84,7 @@ export const getPostsAction = async ({ searchQuery = "", pageSize = 30 } = {}) =
         uid: post.authorUid,
         fallbackName: post.author,
         fallbackImage: post.authorImage,
+        fallbackUsername: post.authorUsername,
         profileMap: postAuthorMap,
       }),
     }));
@@ -116,6 +117,7 @@ export const getPostsAction = async ({ searchQuery = "", pageSize = 30 } = {}) =
             uid: comment.authorUid,
             fallbackName: comment.author,
             fallbackImage: comment.authorImage,
+            fallbackUsername: comment.authorUsername,
             profileMap: commentAuthorMap,
           }),
         }));

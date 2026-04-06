@@ -194,7 +194,7 @@ export default function EditPostPage() {
                 </div>
 
                 {/* Card */}
-                <div className="rounded-xl bg-white/10 dark:bg-black/30 backdrop-blur-sm p-4 md:p-8 space-y-6">
+                <div className="rounded-xl bg-white/10 dark:bg-black/30 backdrop-blur-sm p-2 md:p-4 space-y-6">
                     <h2 className="text-2xl md:text-3xl font-bold text-white">Edit Post</h2>
 
                     <form onSubmit={handleSubmit}>
@@ -202,7 +202,7 @@ export default function EditPostPage() {
                         <div className="flex flex-col md:flex-row gap-6 items-start">
 
                             {/* ── LEFT: text fields ── */}
-                            <div className="flex-1 min-w-0 space-y-5">
+                            <div className="w-full flex-1 min-w-0 space-y-5">
 
                                 {/* Title */}
                                 <div>
@@ -213,7 +213,7 @@ export default function EditPostPage() {
                                         placeholder="Enter an engaging title..."
                                         value={post.title}
                                         onChange={(e) => setPost({ ...post, title: e.target.value })}
-                                        className="text-lg p-3 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                                        className="text-lg p-3 w-full bg-white/10 border-white/20 text-white placeholder:text-gray-400"
                                         required
                                     />
                                 </div>

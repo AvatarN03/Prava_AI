@@ -44,7 +44,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
         className="sticky top-0 z-30 bg-gray-300/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 shadow-sm"
       >
-        <div className="px-4 py-3 flex items-center justify-between gap-4">
+        <div className="px-2 md:px-4 py-3 flex items-center justify-between gap-2 md:gap-4">
           {/* Left Section: Sidebar Toggle + Breadcrumb */}
           <div className="flex items-center gap-4 flex-1 min-w-0">
             {/* Sidebar Toggle Button */}

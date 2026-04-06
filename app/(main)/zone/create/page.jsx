@@ -143,7 +143,7 @@ export default function CreatePostPage() {
                     Back to Posts
                 </Button>
 
-                <Card className="p-4 md:p-6">
+                <div className="p-2 md:p-4">
                     <h2 className="text-2xl md:text-3xl font-bold mb-6 text-gray-900 dark:text-white">Create New Post</h2>
 
                     <form onSubmit={handleSubmit}>
@@ -151,7 +151,7 @@ export default function CreatePostPage() {
                         <div className="flex flex-col md:flex-row gap-6 items-start">
 
                             {/* ── LEFT col: all text fields ── */}
-                            <div className="flex-1 min-w-0 space-y-5">
+                            <div className="w-full flex-1 min-w-0 space-y-5">
 
                                 {/* Title */}
                                 <div>
@@ -326,7 +326,7 @@ export default function CreatePostPage() {
                             </div>
                         </div>
                     </form>
-                </Card>
+                </div>
             </div>
         </div>
     )

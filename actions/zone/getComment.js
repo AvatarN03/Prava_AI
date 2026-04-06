@@ -23,6 +23,7 @@ export const getCommentsAction = async ({ postId }) => {
         uid: comment.authorUid,
         fallbackName: comment.author,
         fallbackImage: comment.authorImage,
+        fallbackUsername: comment.authorUsername,
         profileMap,
       }),
     }));

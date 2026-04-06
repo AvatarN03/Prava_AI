@@ -161,7 +161,7 @@ export default function ViewPostPage() {
           </Button>
 
           {isPostOwner && (
-            <div className="flex w-full gap-2 sm:w-auto">
+            <div className="flex justify-end items-center w-full gap-2 sm:w-auto">
               <Button variant="outline" onClick={() => router.push(`/zone/${id}/edit`)} className="flex items-center gap-2">
                 <Edit2 className="w-4 h-4" />
                 <span className="hidden md:inline">Edit Post</span>
@@ -184,10 +184,12 @@ export default function ViewPostPage() {
             <div className="grid grid-cols-1 items-start gap-3 text-sm text-gray-300 sm:grid-cols-2 sm:items-center">
               <Link href={`/zone/authors/${post.authorUid}`} className="flex items-center gap-2 rounded-md w-fit px-3 py-2 group">
                 <Avatar className="relative w-11 h-11 ring-2 ring-white dark:ring-gray-800">
-                  <AvatarImage src={post?.authorImage} alt={post?.author || "Profile"} />
-                  <AvatarFallback>{post?.author?.charAt(0)?.toUpperCase() || "U"}</AvatarFallback>
+                  <AvatarImage src={post?.authorImage} alt={post?.authorUsername || post?.author || "Profile"} />
+                  <AvatarFallback>{(post?.authorUsername || post?.author || "U").charAt(0)?.toUpperCase() || "U"}</AvatarFallback>
                 </Avatar>
-                <span className="font-medium text-gray-200 group-hover:text-indigo-200">{post.author}</span>
+                <div className="leading-tight">
+                  <p className="font-medium text-gray-200 group-hover:text-indigo-200">@{post.authorUsername || post.author || "anonymous"}</p>
+                </div>
               </Link>
               <div className="flex flex-col gap-1 text-sm text-gray-400 sm:items-end">
                 <span>📅 {formatRelativeDate(post.createdAt)}</span>

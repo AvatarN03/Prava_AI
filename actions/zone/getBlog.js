@@ -30,6 +30,7 @@ export const getPostAction = async ({ postId }) => {
         uid: post.authorUid,
         fallbackName: post.author,
         fallbackImage: post.authorImage,
+        fallbackUsername: post.authorUsername,
         profileMap,
       }),
     };

@@ -29,6 +29,7 @@ export const getAuthorPostsAction = async ({ authorId }) => {
         uid: post.authorUid,
         fallbackName: post.author,
         fallbackImage: post.authorImage,
+        fallbackUsername: post.authorUsername,
         profileMap,
       }),
     }));

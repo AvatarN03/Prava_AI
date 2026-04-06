@@ -33,7 +33,7 @@ export function CommentCard({ comment, canDelete, canEdit, onDelete, onEdit }) {
     }
 
     return (
-        <Card className="p-4 bg-white/10 border-white/15">
+        <Card className="p-2 bg-white/10 border-white/15">
             {/* Top row: avatar + name + date + menu */}
             <CardHeader className="flex items-start justify-between gap-3 mb-3">
                 <div className="flex items-center gap-3">
@@ -45,7 +45,7 @@ export function CommentCard({ comment, canDelete, canEdit, onDelete, onEdit }) {
 
                     </Avatar>
                     <div>
-                        <p className="font-semibold text-white text-sm leading-tight">{comment.author}</p>
+                        <p className="font-semibold text-white text-sm leading-tight">@{comment.authorUsername || comment.author || "anonymous"}</p>
                         <p className="text-xs text-gray-400 mt-0.5">{formatRelativeDate(comment.createdAt)}</p>
                     </div>
                 </div>
@@ -62,7 +62,7 @@ export function CommentCard({ comment, canDelete, canEdit, onDelete, onEdit }) {
             <CardContent>
 
                 {editing ? (
-                    <div className="space-y-2 mt-1">
+                    <div className="space-y-2">
                         <Textarea
                             value={draft}
                             onChange={(e) => setDraft(e.target.value)}

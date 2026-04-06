@@ -16,6 +16,7 @@ export const addCommentAction = async ({ postId, text, profile }) => {
       id: `comment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       text: text.trim(),
       authorUid: profile?.uid,
+      authorUsername: profile?.username || "",
       createdAt: Timestamp.now(),
     };
 
@@ -42,6 +43,7 @@ export const addCommentAction = async ({ postId, text, profile }) => {
         ...comment,
         author: profile?.name || "User",
         authorImage: profile?.avatarUrl || null,
+        authorUsername: profile?.username || "",
       },
     };
   } catch (error) {

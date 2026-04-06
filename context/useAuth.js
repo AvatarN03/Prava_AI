@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { onAuthStateChanged, signOut, updateProfile } from "firebase/auth";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 
 import Loading from "@/components/custom/Loading";
@@ -123,6 +123,37 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Update display name
+  const updateDisplayName = async (name) => {
+    if (!user) {
+      throw new Error("No user logged in");
+    }
+
+    const nextName = String(name || "").trim();
+    if (nextName.length < 2 || nextName.length > 40) {
+      throw new Error("Name must be between 2 and 40 characters");
+    }
+
+    try {
+      const userDocRef = doc(db, "users", user.uid);
+      await updateDoc(userDocRef, { name: nextName });
+
+      if (auth.currentUser) {
+        await updateProfile(auth.currentUser, { displayName: nextName });
+      }
+
+      setProfile((prev) => ({
+        ...prev,
+        name: nextName,
+      }));
+
+      return { success: true };
+    } catch (error) {
+      console.error("Error updating display name:", error);
+      throw error;
+    }
+  };
+
 
   if (loading) {
     return <Loading />;
@@ -137,6 +168,7 @@ export const AuthProvider = ({ children }) => {
         logout,
         updateProfilePicture,
         updatePreferences,
+        updateDisplayName,
       }}
     >
       {!loading && children}
