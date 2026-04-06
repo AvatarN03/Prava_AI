@@ -59,8 +59,6 @@ export const createPostAction = async ({ post, profile }) => {
       imageUrls: uploadedImageUrls,
       mainImageUrl,
       mainImageIndex,
-      author: profile?.name || "Anonymous",
-      authorImage: profile?.avatarUrl || null,
       authorUid: profile?.uid,
       searchTitle: normalizeSearchText(post.title),
       searchCategory: normalizeSearchText(post.category),

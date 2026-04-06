@@ -15,9 +15,7 @@ export const addCommentAction = async ({ postId, text, profile }) => {
     const comment = {
       id: `comment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       text: text.trim(),
-      author: profile?.name || "User",
       authorUid: profile?.uid,
-      authorImage: profile?.avatarUrl || null,
       createdAt: Timestamp.now(),
     };
 
@@ -38,7 +36,14 @@ export const addCommentAction = async ({ postId, text, profile }) => {
       metadata: { commentId: comment.id },
     });
 
-    return { success: true, data: comment };
+    return {
+      success: true,
+      data: {
+        ...comment,
+        author: profile?.name || "User",
+        authorImage: profile?.avatarUrl || null,
+      },
+    };
   } catch (error) {
     return { success: false, error: error.message };
   }

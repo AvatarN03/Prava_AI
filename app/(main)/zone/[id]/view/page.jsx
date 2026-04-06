@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CommentCard } from "@/components/features/zone/CommentCard";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
@@ -185,6 +185,7 @@ export default function ViewPostPage() {
               <Link href={`/zone/authors/${post.authorUid}`} className="flex items-center gap-2 rounded-md w-fit px-3 py-2 group">
                 <Avatar className="relative w-11 h-11 ring-2 ring-white dark:ring-gray-800">
                   <AvatarImage src={post?.authorImage} alt={post?.author || "Profile"} />
+                  <AvatarFallback>{post?.author?.charAt(0)?.toUpperCase() || "U"}</AvatarFallback>
                 </Avatar>
                 <span className="font-medium text-gray-200 group-hover:text-indigo-200">{post.author}</span>
               </Link>

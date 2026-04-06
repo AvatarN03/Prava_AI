@@ -1,6 +1,7 @@
 import { doc, getDoc } from "firebase/firestore";
 
 import { db } from "@/lib/config/firebase";
+import { getUserProfilesMap, resolveAuthorFields } from "@/lib/services/userProfileResolver";
 
 export const getCommentsAction = async ({ postId }) => {
   try {
@@ -15,7 +16,18 @@ export const getCommentsAction = async ({ postId }) => {
       createdAt: c.createdAt?.toDate?.() || new Date(c.createdAt),
     }));
 
-    return { success: true, data: comments };
+    const profileMap = await getUserProfilesMap(comments.map((comment) => comment.authorUid));
+    const enrichedComments = comments.map((comment) => ({
+      ...comment,
+      ...resolveAuthorFields({
+        uid: comment.authorUid,
+        fallbackName: comment.author,
+        fallbackImage: comment.authorImage,
+        profileMap,
+      }),
+    }));
+
+    return { success: true, data: enrichedComments };
   } catch (error) {
     return { success: false, error: error.message };
   }

@@ -11,7 +11,7 @@ const Logo = () => {
       width={28}
       height={28} 
       />
-      <h1 className="text-2xl font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:text-slate-200 transition-all group-hover:scale-105">
+      <h1 className="text-base md:text-2xl font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:text-slate-200 transition-all group-hover:scale-105 ">
         {/* AI Tour */}
         Prava AI
       </h1>

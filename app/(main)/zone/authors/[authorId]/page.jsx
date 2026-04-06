@@ -4,12 +4,11 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 
 import { ArrowLeft, Edit2, MessageCircle } from 'lucide-react'
-import { collection, getDocs, query, where } from 'firebase/firestore'
 
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 
-import { db } from '@/lib/config/firebase'
+import { getAuthorPostsAction } from '@/actions/zone/getAuthorPosts'
 import { formatRelativeDate
 , renderContent, getMainBlogImage, getBlogImages } from '@/lib/utils/blogHelpers';
 
@@ -30,34 +29,14 @@ export default function AuthorPostsPage() {
     const fetchAuthorPosts = async () => {
         setIsLoading(true)
         try {
-            // Fetch all posts by this author
-            const q = query(collection(db, 'blog_posts'), where('authorUid', '==', authorId))
-            const postsSnap = await getDocs(q)
+            const res = await getAuthorPostsAction({ authorId })
+            if (!res.success) {
+                throw new Error(res.error || 'Failed to load author posts')
+            }
 
-            const postsData = postsSnap.docs
-                .map((d) => {
-                    const data = d.data()
-                    return {
-                        id: d.id,
-                        ...data,
-                        createdAt: data.createdAt?.toDate?.() || new Date(data.createdAt),
-                        updatedAt: data.updatedAt?.toDate?.() || (data.updatedAt ? new Date(data.updatedAt) : null),
-                    }
-                })
-                .sort((a, b) => b.createdAt - a.createdAt)
-
-            setPosts(postsData)
-
-            // Grab author name from the first post
-            if (postsData.length > 0) setAuthorName(postsData[0].author)
-
-            // Fetch comment counts for each post
-            const commentsSnap = await getDocs(collection(db, 'blog_comments'))
-            const commentsMap = {}
-            commentsSnap.docs.forEach((d) => {
-                commentsMap[d.id] = (d.data().comments || []).length
-            })
-            setComments(commentsMap)
+            setPosts(res.data.posts || [])
+            setComments(res.data.commentsMap || {})
+            setAuthorName(res.data.authorName || '')
         } catch (error) {
             console.error('Error fetching author posts:', error)
         } finally {

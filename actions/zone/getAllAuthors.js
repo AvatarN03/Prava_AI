@@ -1,9 +1,13 @@
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/lib/config/firebase";
+import { getUserProfilesMap } from "@/lib/services/userProfileResolver";
 
 export const getAllAuthorsAction = async () => {
   try {
     const postsSnap = await getDocs(collection(db, "blog_posts"));
+    const userProfiles = await getUserProfilesMap(
+      postsSnap.docs.map((d) => d.data()?.authorUid),
+    );
 
     const authorMap = {};
     postsSnap.docs.forEach((d) => {
@@ -11,11 +15,13 @@ export const getAllAuthorsAction = async () => {
       const uid = data.authorUid;
       if (!uid) return;
 
+      const profile = userProfiles[uid];
+
       if (!authorMap[uid]) {
         authorMap[uid] = {
           uid,
-          name: data.author || "Anonymous",
-          avatarImage: data.authorImage || null,
+          name: profile?.name || data.author || "Anonymous",
+          avatarImage: profile?.avatarUrl || data.authorImage || null,
           postCount: 0,
         };
       }

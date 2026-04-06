@@ -1,13 +1,14 @@
 import { collection, getDocs, query, where } from "firebase/firestore";
 
 import { db } from "@/lib/config/firebase";
+import { getUserProfilesMap, resolveAuthorFields } from "@/lib/services/userProfileResolver";
 
 export const getAuthorPostsAction = async ({ authorId }) => {
   try {
     const q = query(collection(db, "blog_posts"), where("authorUid", "==", authorId));
     const postsSnap = await getDocs(q);
 
-    const posts = postsSnap.docs
+    let posts = postsSnap.docs
       .map((d) => {
         const data = d.data();
         return {
@@ -20,6 +21,17 @@ export const getAuthorPostsAction = async ({ authorId }) => {
         };
       })
       .sort((a, b) => b.createdAt - a.createdAt);
+
+    const profileMap = await getUserProfilesMap(posts.map((post) => post.authorUid));
+    posts = posts.map((post) => ({
+      ...post,
+      ...resolveAuthorFields({
+        uid: post.authorUid,
+        fallbackName: post.author,
+        fallbackImage: post.authorImage,
+        profileMap,
+      }),
+    }));
 
     const commentsSnap = await getDocs(collection(db, "blog_comments"));
     const commentsMap = {};

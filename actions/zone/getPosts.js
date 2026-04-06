@@ -3,6 +3,7 @@ import { collection, getDocs, limit, query, where } from "firebase/firestore";
 import { db } from "@/lib/config/firebase";
 import { normalizeSearchText } from "@/lib/utils";
 import { matchesBlogSearch, normalizeBlogPost } from "@/lib/utils/blogHelpers";
+import { getUserProfilesMap, resolveAuthorFields } from "@/lib/services/userProfileResolver";
 
 const mapPostDocument = (d) => {
   const data = d.data();
@@ -76,10 +77,23 @@ export const getPostsAction = async ({ searchQuery = "", pageSize = 30 } = {}) =
       .sort((a, b) => b.createdAt - a.createdAt)
       .slice(0, normalizedTerm ? pageSize : posts.length);
 
+    const postAuthorMap = await getUserProfilesMap(posts.map((post) => post.authorUid));
+    posts = posts.map((post) => ({
+      ...post,
+      ...resolveAuthorFields({
+        uid: post.authorUid,
+        fallbackName: post.author,
+        fallbackImage: post.authorImage,
+        profileMap: postAuthorMap,
+      }),
+    }));
+
     const visiblePostIds = new Set(posts.map((post) => post.id));
 
     const commentsSnap = await getDocs(collection(db, "blog_comments"));
     const commentsMap = {};
+    const allCommentAuthors = [];
+
     commentsSnap.docs.forEach((d) => {
       if (!visiblePostIds.has(d.id)) return;
 
@@ -87,7 +101,26 @@ export const getPostsAction = async ({ searchQuery = "", pageSize = 30 } = {}) =
         ...c,
         createdAt: c.createdAt?.toDate?.() || new Date(c.createdAt),
       }));
+
+      commentsMap[d.id].forEach((comment) => {
+        if (comment.authorUid) allCommentAuthors.push(comment.authorUid);
+      });
     });
+
+    if (allCommentAuthors.length > 0) {
+      const commentAuthorMap = await getUserProfilesMap(allCommentAuthors);
+      Object.keys(commentsMap).forEach((postId) => {
+        commentsMap[postId] = commentsMap[postId].map((comment) => ({
+          ...comment,
+          ...resolveAuthorFields({
+            uid: comment.authorUid,
+            fallbackName: comment.author,
+            fallbackImage: comment.authorImage,
+            profileMap: commentAuthorMap,
+          }),
+        }));
+      });
+    }
 
     return { success: true, data: { posts, commentsMap } };
   } catch (error) {
