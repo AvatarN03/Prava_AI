@@ -136,7 +136,7 @@ const BlogListPage = () => {
               return (
                 <div
                   key={post.id}
-                  className="overflow-hidden md:h-64 hover:shadow-lg transition-shadow cursor-pointer rounded-lg bg-gray-100 dark:bg-gray-800 h-full"
+                  className="overflow-hidden md:h-70 max-h-80 hover:shadow-lg transition-shadow cursor-pointer rounded-lg bg-gray-100 dark:bg-gray-800 h-full"
                   onClick={() => router.push(`/zone/${post.id}/view`)}
                 >
                   <div className="flex h-full flex-col md:flex-row">
@@ -150,7 +150,7 @@ const BlogListPage = () => {
                       </div>
                     )}
 
-                    <div className={`p-3 md:p-6 flex flex-col justify-between gap-3 ${mainImage ? "md:w-2/3" : "w-full"}`}>
+                    <div className={`p-3 md:p-6 flex flex-col justify-between ${mainImage ? "md:w-2/3" : "w-full"}`}>
                       <div className="space-y-4">
                         <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors line-clamp-2" title={post.title}>
                           {post.title}
@@ -175,7 +175,7 @@ const BlogListPage = () => {
                         )}
                       </div>
 
-                      <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700 ">
                         <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 text-sm">
                           <MessageCircle className="w-4 h-4" />
                           <span>{(comments[post.id] || []).length} comments</span>

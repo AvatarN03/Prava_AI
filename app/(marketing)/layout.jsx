@@ -1,3 +1,4 @@
+import Footer from '@/components/Marketing/Footer'
 import Navbar from '@/components/Marketing/Navbar'
 
 const LayoutMarketing = ({ children }) => {
@@ -6,6 +7,7 @@ const LayoutMarketing = ({ children }) => {
             <Navbar />
 
             {children}
+            <Footer />
         </div>
 
     )

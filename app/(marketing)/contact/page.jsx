@@ -39,10 +39,10 @@ const Contact = () => {
             unique project to life, I'm here to help.
           </p>
 
-          <form ref={formRef} onSubmit={onSubmit} className='flex flex-col space-y-7 mt-12'>
+          <form ref={formRef} onSubmit={onSubmit} className=' space-y-7 mt-12'>
 
-            <Label className='space-y-2 md:space-y-3'>
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Full Name:</span>
+            <Label className='space-y-2 md:space-y-3 flex flex-col  items-start'>
+              <span className="text-sm md:text-base font-medium text-gray-700 dark:text-gray-300">Full Name:</span>
               <Input
                 type="text"
                 name="name"
@@ -55,8 +55,8 @@ const Contact = () => {
                 className="text-red-400 text-sm" />
             </Label>
 
-            <Label className='space-y-3'>
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Email:</span>
+            <Label className='space-y-3 flex flex-col items-start'>
+              <span className="text-sm md:text-base font-medium text-gray-700 dark:text-gray-300">Email:</span>
               <Input
                 type="email"
                 name="email"
@@ -69,8 +69,8 @@ const Contact = () => {
                 className="text-red-400 text-sm" />
             </Label>
 
-            <Label className='space-y-3'>
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Your Message:</span>
+            <Label className='space-y-3 flex flex-col items-start'>
+              <span className="text-sm md:text-base font-medium text-gray-700 dark:text-gray-300">Your Message:</span>
               <Textarea
                 name="message"
                 id="message"
@@ -83,7 +83,7 @@ const Contact = () => {
                 className="text-red-400 text-sm" />
             </Label>
 
-            <Button className="w-full inline-flex items-center justify-center gap-2  disabled:opacity-50 disabled:cursor-not-allowed" type="submit" disabled={state.submitting}>
+            <Button className="w-full max-w-sm mx-auto flex  items-center justify-center gap-2  disabled:opacity-50 disabled:cursor-not-allowed" type="submit" disabled={state.submitting}>
               {state.submitting ? "Sending..." : "Send Message"}
               <ArrowRight className='w-4 h-4' />
             </Button>

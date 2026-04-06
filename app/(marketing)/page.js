@@ -6,7 +6,6 @@ import Features from "@/components/Marketing/Features";
 import HTW from "@/components/Marketing/HTW";
 import Pricing from "@/components/Marketing/Pricing";
 import CTA from "@/components/Marketing/CTA";
-import Footer  from "@/components/Marketing/Footer";
 
 const LandingPage = () => {
   return (
@@ -59,7 +58,6 @@ const LandingPage = () => {
       {/* CTA Section */}
       <CTA />
 
-      <Footer />
     </>
   );
 };
