@@ -30,7 +30,7 @@ export default function RootLayout({ children }) {
      
         <AuthProvider>
             <ThemeProvider attribute="class" enableSystem defaultTheme="system">
-              <Toaster position="top-center" />
+              <Toaster position="bottom-right" />
               {children}
             </ThemeProvider>
         </AuthProvider>

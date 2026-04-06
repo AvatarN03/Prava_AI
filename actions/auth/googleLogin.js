@@ -25,6 +25,16 @@ export const googleLoginAction = async () => {
       const existing = userSnap.data() || {};
       const patch = {};
 
+      if (!existing.name && user.displayName) {
+        patch.name = user.displayName;
+      }
+      if (!existing.avatarUrl && user.photoURL) {
+        patch.avatarUrl = user.photoURL;
+      }
+      if (!existing.email && user.email) {
+        patch.email = user.email;
+      }
+
       if (typeof existing.aiAssistantUsageCount !== "number") {
         patch.aiAssistantUsageCount = 0;
       }

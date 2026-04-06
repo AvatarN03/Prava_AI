@@ -16,7 +16,7 @@ export default function PreferencesPage() {
   const searchParams = useSearchParams();
   const continueTo = searchParams.get("continueTo");
   const router = useRouter();
-  const { user, profile } = useAuth();
+  const { user, profile, setProfile } = useAuth();
 
   const [selected, setSelected] = useState([]);
   const [username, setUsername] = useState(
@@ -87,20 +87,26 @@ export default function PreferencesPage() {
       batch.set(doc(db, "usernames", username.trim()), { uid: user.uid });
       await batch.commit();
 
-     
+      setProfile((prev) => ({
+        ...(prev || {}),
+        username: username.trim(),
+        preferences: selected,
+      }));
+
+      toast.success("Profile setup complete!");
+      router.replace(continueTo || "/dashboard");
 
     } catch (err) {
       console.error("Batch write error:", err);
-      setError(err.message || "Something went wrong.");
+      toast.error(err.message || "Something went wrong.");
     } finally {
       setLoading(false);
     }
   };
 
-  // 3. Fix useEffect to respect continueTo
   useEffect(() => {
     if (profile?.preferences?.length > 0 && profile?.username) {
-      router.push(continueTo || "/dashboard");
+      router.replace(continueTo || "/dashboard");
     }
   }, [profile, router, continueTo]);
 

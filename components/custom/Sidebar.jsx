@@ -21,7 +21,9 @@ import { getUserInitials } from "@/lib/utils/nameInitial";
 export default function Sidebar({ isOpen, onClose }) {
   const pathname = usePathname();
   const [modal, setModal] = useState(false);
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
+  const displayName = profile?.name || user?.displayName || profile?.username || "Anonymous User";
+  const displayEmail = profile?.email || user?.email || "No email provided";
 
 
 
@@ -211,7 +213,7 @@ export default function Sidebar({ isOpen, onClose }) {
               <Avatar className="relative w-11 h-11 ring-2 ring-white dark:ring-gray-800">
                 <AvatarImage
                   src={profile?.avatarUrl}
-                  alt={profile?.name || "Profile"}
+                  alt={displayName || "Profile"}
                   className={"object-center object-cover"}
                 />
                 <AvatarFallback className="text-sm font-semibold bg-gradient-to-br from-blue-600 to-purple-600 text-white">
@@ -225,10 +227,10 @@ export default function Sidebar({ isOpen, onClose }) {
             {/* User Info */}
             <div className="text-left flex-1 min-w-0">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                {profile?.name || "Anonymous User"}
+                {displayName}
               </h3>
               <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                {profile?.email || "No email provided"}
+                {displayEmail}
               </p>
             </div>
 
@@ -241,25 +243,7 @@ export default function Sidebar({ isOpen, onClose }) {
             </motion.div>
           </motion.button>
 
-          {/* Quick Stats (Optional) */}
-          {/* <div className="relative mt-3 grid grid-cols-3 gap-2 text-center">
-            {[
-              { label: "Trips", value: "5" },
-              { label: "Saved", value: "12" },
-              { label: "Points", value: "240" }
-            ].map((stat, index) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="p-2 rounded-lg bg-gray-50 dark:bg-gray-800/50"
-              >
-                <div className="text-xs font-bold text-gray-900 dark:text-white">{stat.value}</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">{stat.label}</div>
-              </motion.div>
-            ))}
-          </div> */}
+         
         </div>
 
         {modal && <ProfileCard modal={modal} setModal={setModal} />}

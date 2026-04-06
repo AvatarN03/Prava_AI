@@ -29,10 +29,22 @@ export const AuthProvider = ({ children }) => {
       try {
         const docRef = doc(db, "users", authUser.uid);
         const docSnap = await getDoc(docRef);
+        const authName = authUser.displayName || authUser.email?.split("@")[0] || "";
+        const authAvatar = authUser.photoURL || "";
 
         if (docSnap.exists()) {
           const data = docSnap.data();
           const patch = {};
+
+          if (!data.name && authName) {
+            patch.name = authName;
+          }
+          if (!data.avatarUrl && authAvatar) {
+            patch.avatarUrl = authAvatar;
+          }
+          if (!data.email && authUser.email) {
+            patch.email = authUser.email;
+          }
 
           if (typeof data.aiAssistantUsageCount !== "number") {
             patch.aiAssistantUsageCount = 0;
@@ -51,6 +63,14 @@ export const AuthProvider = ({ children }) => {
           setProfile({
             ...data,
             ...patch,
+          });
+        } else {
+          setProfile({
+            uid: authUser.uid,
+            email: authUser.email || "",
+            name: authName,
+            avatarUrl: authAvatar,
+            preferences: [],
           });
         }
         // ✅ If doc doesn't exist yet, DON'T call setProfile(null)
