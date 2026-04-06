@@ -78,7 +78,7 @@ export default function AuthorPostsPage() {
             <div className="max-w-5xl mx-auto space-y-6">
 
                 {/* Header */}
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
                     <Button variant="outline" onClick={() => router.push('/zone')} className="flex items-center gap-2 shrink-0">
                         <ArrowLeft className="w-4 h-4" />
                         All Posts
@@ -116,7 +116,7 @@ export default function AuthorPostsPage() {
                                     className="overflow-hidden md:h-60 hover:shadow-lg transition-shadow cursor-pointer rounded-lg bg-gray-800 h-full"
                                     onClick={() => router.push(`/zone/${post.id}/view`)}
                                 >
-                                    <div className="flex flex-col md:flex-row h-full">
+                                    <div className="flex h-full flex-col md:flex-row">
                                         {mainImage && (
                                             <div className="h-60 md:h-auto md:w-1/3 shrink-0">
                                                 <img
@@ -129,10 +129,10 @@ export default function AuthorPostsPage() {
 
                                         <div className={`p-3 md:p-6 flex flex-col justify-between gap-3 ${mainImage ? 'md:w-2/3' : 'w-full'}`}>
                                             <div className="space-y-4">
-                                                <h3 className="text-xl md:text-2xl xl:text-3xl font-bold text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                                                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors line-clamp-2">
                                                     {post.title}
                                                 </h3>
-                                                <div className="grid grid-cols-2 gap-2 text-sm text-gray-500 dark:text-gray-400">
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-500 dark:text-gray-400">
                                                     <span>✍️ {post.author}</span>
                                                     <span className='text-right'>📅 {formatRelativeDate(post.createdAt)}</span>
                                                     <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-3xl w-fit text-xs font-medium">
@@ -155,7 +155,7 @@ export default function AuthorPostsPage() {
                                             <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
                                                 <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 text-sm">
                                                     <MessageCircle className="w-4 h-4" />
-                                                    <span>{(comments[post.id] || []).length} comments</span>
+                                                    <span>{comments[post.id] || 0} comments</span>
                                                 </div>
 
                                                 {post.authorUid === profile?.uid && (

@@ -4,6 +4,7 @@ import { generateTravelPlan } from "@/actions/trip/ai";
 
 import { db } from "@/lib/config/firebase";
 import { logActivity } from "@/lib/services/firestore";
+import { normalizeSearchText } from "@/lib/utils";
 
 
 export const createTripAction = async ({ formData, profile }) => {
@@ -27,6 +28,9 @@ export const createTripAction = async ({ formData, profile }) => {
       userId: profile.uid,
       userSelection: tripData,
       GeneratedPlan: aiGeneratedPlan,
+      searchDestination: normalizeSearchText(tripData.destination),
+      searchTitle: normalizeSearchText(tripData.title),
+      searchCategory: normalizeSearchText(tripData.category),
       createdAt: new Date(),
       updatedAt: new Date(),
       currency: tripData.currency,

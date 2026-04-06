@@ -3,6 +3,7 @@ import axios from "axios";
 
 import { db } from "@/lib/config/firebase";
 import { logActivity } from "@/lib/services/firestore";
+import { normalizeSearchText } from "@/lib/utils";
 
 const uploadImageFile = async (file) => {
   const formData = new FormData();
@@ -61,6 +62,9 @@ export const createPostAction = async ({ post, profile }) => {
       author: profile?.name || "Anonymous",
       authorImage: profile?.avatarUrl || null,
       authorUid: profile?.uid,
+      searchTitle: normalizeSearchText(post.title),
+      searchCategory: normalizeSearchText(post.category),
+      searchAuthor: normalizeSearchText(profile?.name || "Anonymous"),
       createdAt: Timestamp.now(),
       likes: 0,
     };

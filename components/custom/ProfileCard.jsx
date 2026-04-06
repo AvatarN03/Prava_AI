@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 
 import {
   LogOut,
@@ -15,6 +16,8 @@ import {
   CreditCard,
   Crown,
   Info,
+  Sparkles,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import { collection, query, where, getDocs } from "firebase/firestore";
@@ -59,6 +62,12 @@ const ProfileCard = ({ modal, setModal }) => {
     blogPosts: 0,
     loading: true
   });
+
+  const currentMonthKey = `${new Date().getUTCFullYear()}-${String(new Date().getUTCMonth() + 1).padStart(2, "0")}`;
+  const aiUsageLimit = profile?.subscription === "pro" ? 3 : 1;
+  const hasCurrentUsage = profile?.aiAssistantUsageMonth === currentMonthKey;
+  const aiUsageCount = hasCurrentUsage ? Number(profile?.aiAssistantUsageCount || 0) : 0;
+  const aiUsageRemaining = Math.max(aiUsageLimit - aiUsageCount, 0);
 
   useEffect(() => {
 
@@ -515,6 +524,43 @@ const ProfileCard = ({ modal, setModal }) => {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* AI Assistant Limit */}
+          <div className="p-4 rounded-xl border border-indigo-200 dark:border-indigo-900 bg-indigo-50/70 dark:bg-indigo-950/30">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-200 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  AI Assistant Usage
+                </p>
+                <p className="text-xs text-indigo-700 dark:text-indigo-300 mt-1">
+                  {aiUsageCount} of {aiUsageLimit} used this month ({aiUsageRemaining} remaining)
+                </p>
+              </div>
+              <span className="text-[11px] px-2 py-1 rounded-full bg-white/80 dark:bg-gray-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                {profile?.subscription === "pro" ? "Pro" : "Free"}
+              </span>
+            </div>
+
+            <div className="mt-3 h-2 rounded-full bg-indigo-100 dark:bg-indigo-900/60 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-blue-500"
+                style={{ width: `${Math.min((aiUsageCount / aiUsageLimit) * 100, 100)}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Feedback link */}
+          <div className="flex justify-end">
+            <Link
+              href="/contact"
+              onClick={() => setModal(false)}
+              className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline"
+            >
+              Share feedback
+              <ExternalLink className="w-3 h-3" />
+            </Link>
           </div>
         </div>
 

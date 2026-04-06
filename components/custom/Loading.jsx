@@ -1,56 +1,63 @@
 import Image from "next/image";
 
-import { Loader2 } from "lucide-react";
-
 const Loading = () => {
   return (
-    <div className="min-h-screen flex items-start  justify-center bg-gradient-to-br    from-neutral-700 via-neutral-800 to-neutral-950 transition-colors">
-      <div className="flex flex-col items-center gap-6 p-8 pt-32 space-y-6">
-        <div className="flex items-end gap-2">
+    <div className="flex flex-col md:flex-row h-screen bg-[#0b1a2b] text-[#e6f0ff] font-sans">
 
-          <Image
-            src="/logo.png"
-            alt="logo"
-            width={80}
-            height={80}
-            className="animate-pulse"
-          />
-          <h3 className="text-4xl font-bold text-gray-300">AI Tour</h3>
-        </div>
-
-
-        {/* Loading text with subtle animation */}
-        <div className="text-center space-y-2">
-          <h2 className="text-2xl font-bold  text-neutral-100 tracking-tight">
-            Loading Your Experience
-          </h2>
-          <p className="text-sm text-neutral-400 max-w-xs">
-            Preparing everything for you. This will only take a moment.
-          </p>
-        </div>
-
-        {/* Progress bar */}
-        <div className="w-48 h-1 bg-neutral-800 rounded-full overflow-hidden">
-          <div className="h-full bg-gradient-to-r  from-blue-400 to-blue-500 animate-[loading_1.5s_ease-in-out_infinite]"></div>
-        </div>
+      {/* LEFT */}
+      <div className="w-full h-1/2 md:h-full md:w-2/5 flex flex-col justify-center items-center gap-3 border-b md:border-b-0 md:border-r border-white/10 p-6">
+        <Image src="/logo2.png" alt="Prava AI" width={70} height={70} />
+        
+        <h2 className="text-xl font-semibold">Prava AI</h2>
+        
+        <p className="text-xs opacity-60 text-center">
+          Plan • Explore • Travel Smart
+        </p>
       </div>
 
-      <style jsx>{`
-      @keyframes loading {
-        0%, 100% {
-          transform: translateX(-100%);
-        }
-        50% {
-          transform: translateX(100%);
-        }
-      }
-    `}</style>
-    </div>
+      {/* RIGHT */}
+      <div className="w-full h-1/2 text-center md:text-left md:h-full md:w-3/5 flex flex-col justify-center px-6 md:px-16 gap-4 animate-fade">
 
+        <h1 className="text-lg md:text-xl font-semibold">
+          Loading your journey...
+        </h1>
+
+        <p className="text-sm opacity-60">
+          Preparing your travel experience
+        </p>
+
+        {/* Progress Bar */}
+        <div className="w-full h-[4px] bg-white/10 rounded-full overflow-hidden">
+          <div className="h-full bg-blue-400 rounded-full animate-loadingBar"></div>
+        </div>
+
+      </div>
+
+      {/* Animations */}
+      <style>{`
+        @keyframes loadingBar {
+          0% { width: 0%; }
+          50% { width: 70%; }
+          100% { width: 100%; }
+        }
+
+        .animate-loadingBar {
+          animation: loadingBar 2s ease-in-out infinite;
+        }
+
+        @keyframes fade {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
+        .animate-fade {
+          animation: fade 0.6s ease;
+        }
+      `}</style>
+
+    </div>
   );
 };
-
-
 
 export default Loading;
 

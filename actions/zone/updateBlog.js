@@ -2,6 +2,7 @@ import { doc, updateDoc, Timestamp } from "firebase/firestore";
 import axios from "axios";
 
 import { db } from "@/lib/config/firebase";
+import { normalizeSearchText } from "@/lib/utils";
 
 const uploadImageFile = async (file) => {
   const formData = new FormData();
@@ -67,6 +68,9 @@ export const updatePostAction = async ({ id, post, newImageFile }) => {
       title: post.title.trim(),
       content: post.content.trim(),
       category: post.category,
+      searchTitle: normalizeSearchText(post.title),
+      searchCategory: normalizeSearchText(post.category),
+      searchAuthor: normalizeSearchText(post.author),
       imageUrl: mainImageUrl,
       imageUrls: finalImageUrls,
       mainImageUrl,

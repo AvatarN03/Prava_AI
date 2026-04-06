@@ -1,6 +1,6 @@
 {
-  "name": "ai-tour-3",
-  "version": "0.1.0",
+  "name": "prava ai",
+  "version": "0.1.1",
   "private": true,
   "scripts": {
     "dev": "next dev",

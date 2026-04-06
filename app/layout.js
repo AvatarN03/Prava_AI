@@ -14,10 +14,10 @@ const dmSans = DM_Sans({ subsets: ["latin"], weight: ["300", "400", "500", "600"
 
 
 export const metadata = {
-  title: "AI TOUR",
+  title: "Prava AI - flow of a journey",
   description: "version - 2",
   icons: {
-    icon: "/logo.png",
+    icon: "/logo2.png",
   },
 };
 

@@ -135,16 +135,16 @@ export default function CreatePostPage() {
     };
 
     return (
-        <div className="h-full bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-6">
-            <div className="space-y-6">
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-3 md:p-6">
+            <div className="mx-auto w-full max-w-6xl space-y-6">
 
                 <Button variant="outline" onClick={() => router.push('/zone')} className="flex items-center gap-2">
                     <ArrowLeft className="w-4 h-4" />
                     Back to Posts
                 </Button>
 
-                <Card className="p-6">
-                    <h2 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Create New Post</h2>
+                <Card className="p-4 md:p-6">
+                    <h2 className="text-2xl md:text-3xl font-bold mb-6 text-gray-900 dark:text-white">Create New Post</h2>
 
                     <form onSubmit={handleSubmit}>
                         {/* Two-column on md+, single column on mobile */}
@@ -191,7 +191,7 @@ export default function CreatePostPage() {
                                         Content *
                                     </label>
                                     {/* Formatting toolbar */}
-                                    <div className="flex gap-2 p-2 bg-gray-100 dark:bg-gray-700 rounded-t-md border border-b-0">
+                                    <div className="flex flex-wrap gap-2 p-2 bg-gray-100 dark:bg-gray-700 rounded-t-md border border-b-0">
                                         {[
                                             { tag: 'bold', Icon: Bold },
                                             { tag: 'italic', Icon: Italic },
@@ -207,7 +207,7 @@ export default function CreatePostPage() {
                                                 <Icon className="w-4 h-4" />
                                             </button>
                                         ))}
-                                        <span className="text-xs text-gray-400 self-center ml-2">
+                                        <span className="hidden sm:inline text-xs text-gray-400 self-center ml-2">
                                             Select text then click to format
                                         </span>
                                     </div>

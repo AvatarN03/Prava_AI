@@ -154,14 +154,14 @@ export default function ViewPostPage() {
       <div className="absolute inset-0 bg-black/50" />
 
       <div className="relative z-10 p-2 md:p-6 space-y-6">
-        <div className="flex justify-between items-center gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Button variant="outline" onClick={() => router.push("/zone")} className="flex items-center gap-2">
             <ArrowLeft className="w-4 h-4" />
             Back
           </Button>
 
           {isPostOwner && (
-            <div className="flex gap-2">
+            <div className="flex w-full gap-2 sm:w-auto">
               <Button variant="outline" onClick={() => router.push(`/zone/${id}/edit`)} className="flex items-center gap-2">
                 <Edit2 className="w-4 h-4" />
                 <span className="hidden md:inline">Edit Post</span>
@@ -181,14 +181,14 @@ export default function ViewPostPage() {
               <h1 className="text-2xl md:text-3xl font-bold text-white">{post.title}</h1>
             </div>
 
-            <div className="grid grid-cols-2 items-center gap-3 text-sm text-gray-300">
+            <div className="grid grid-cols-1 items-start gap-3 text-sm text-gray-300 sm:grid-cols-2 sm:items-center">
               <Link href={`/zone/authors/${post.authorUid}`} className="flex items-center gap-2 rounded-md w-fit px-3 py-2 group">
                 <Avatar className="relative w-11 h-11 ring-2 ring-white dark:ring-gray-800">
                   <AvatarImage src={post?.authorImage} alt={post?.author || "Profile"} />
                 </Avatar>
                 <span className="font-medium text-gray-200 group-hover:text-indigo-200">{post.author}</span>
               </Link>
-              <div className="flex flex-col items-end gap-1 text-sm text-gray-400">
+              <div className="flex flex-col gap-1 text-sm text-gray-400 sm:items-end">
                 <span>📅 {formatRelativeDate(post.createdAt)}</span>
                 {post.updatedAt && <span>✏️ {formatRelativeDate(post.updatedAt)}</span>}
               </div>
@@ -301,7 +301,7 @@ export default function ViewPostPage() {
               </AccordionTrigger>
               <AccordionContent className="pt-0">
                 <div className="space-y-5">
-                  <form onSubmit={handleAddComment} className="flex gap-3 items-start">
+                  <form onSubmit={handleAddComment} className="flex flex-col gap-3 items-start sm:flex-row">
                     <div className="flex-1 space-y-2">
                       <Textarea
                         placeholder="Share your thoughts..."

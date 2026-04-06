@@ -46,9 +46,9 @@ export const useBlog = () => {
   };
 
   // ✅ GET ALL POSTS
-  const getPosts = async () => {
+  const getPosts = async ({ searchQuery, pageSize } = {}) => {
     setLoading(true);
-    return handleAsync(() => getPostsAction());
+    return handleAsync(() => getPostsAction({ searchQuery, pageSize }));
   };
 
   // ✅ GET POST

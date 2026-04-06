@@ -14,7 +14,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/context/useAuth'
 
-import { getLastMonths } from '@/lib/utils'
+import { getLastMonths, formatCompactAmount } from '@/lib/utils'
 import { MONTHS_TO_SHOW } from '@/lib/constants'
 import { getInsightsAction } from '@/actions/user/getInsights'
 import { saveBudgetGoalAction } from '@/actions/user/saveBudgetGoal'
@@ -24,23 +24,6 @@ const Skeleton = ({ className = '' }) => (
 )
 
 const MONEY_SYMBOL = '₹'
-
-const formatCompactAmount = (value) => {
-  const num = Number(value) || 0
-  const abs = Math.abs(num)
-
-  if (abs >= 1000000) {
-    const formatted = (num / 1000000).toFixed(abs >= 10000000 ? 0 : 1)
-    return `${formatted.replace(/\.0$/, '')}M`
-  }
-
-  if (abs >= 1000) {
-    const formatted = (num / 1000).toFixed(abs >= 10000 ? 0 : 1)
-    return `${formatted.replace(/\.0$/, '')}K`
-  }
-
-  return `${num}`
-}
 
 const StatCard = ({ value, label, icon, color, loading, delay = '' }) => {
   const colorClasses = {
@@ -72,7 +55,7 @@ const StatCard = ({ value, label, icon, color, loading, delay = '' }) => {
   }
 
   return (
-    <div className={`relative rounded-2xl p-7 overflow-hidden transition-all duration-200 hover:-translate-y-0.5 ${colorClasses[color]} ${delay}`}>
+    <div className={`relative rounded-2xl p-3 md:p-7 overflow-hidden transition-all duration-200 hover:-translate-y-0.5 ${colorClasses[color]} ${delay}`}>
       <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-4 ${iconClasses[color]}`}>
         {icon}
       </div>
@@ -187,7 +170,7 @@ export default function InsightsPage() {
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard value={stats.trips} label="Total Trips" icon="✈️" color="blue" loading={loading} delay="animate-[fadeIn_0.4s_ease_both_0.05s]" />
-        <StatCard value={`${MONEY_SYMBOL}${stats.totalSpent.toLocaleString()}`} label="Total Spent" icon="💳" color="green" loading={loading} delay="animate-[fadeIn_0.4s_ease_both_0.1s]" />
+        <StatCard value={`${MONEY_SYMBOL}${formatCompactAmount(stats.totalSpent)}`} label="Total Spent" icon="💳" color="green" loading={loading} delay="animate-[fadeIn_0.4s_ease_both_0.1s]" />
         <StatCard value={stats.blogPosts} label="Blog Posts" icon="✍️" color="purple" loading={loading} delay="animate-[fadeIn_0.4s_ease_both_0.15s]" />
         <StatCard value={stats.activities} label="Activities" icon="🎯" color="orange" loading={loading} delay="animate-[fadeIn_0.4s_ease_both_0.2s]" />
       </div>
@@ -196,17 +179,17 @@ export default function InsightsPage() {
       {!loading && (stats.favoriteDestination || stats.totalDaysTraveling > 0) && (
         <div className="flex flex-wrap gap-3 animate-[fadeIn_0.4s_ease_both_0.2s]">
           {stats.favoriteDestination && (
-            <span className="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800 font-medium">
+            <span className="inline-flex items-center gap-2 text-sm px-2 md:px-4 py-2 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800 font-medium">
               <span>📍</span> Favourite: {stats.favoriteDestination}
             </span>
           )}
           {stats.totalDaysTraveling > 0 && (
-            <span className="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-full bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-100 dark:border-amber-800 font-medium">
+            <span className="inline-flex items-center gap-2 text-sm px-2 md:px-4 py-2 rounded-full bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-100 dark:border-amber-800 font-medium">
               <span>🌍</span> {stats.totalDaysTraveling} days on the road
             </span>
           )}
           {stats.trips > 0 && (
-            <span className="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800 font-medium">
+            <span className="inline-flex items-center gap-2 text-sm px-2 md:px-4 py-2 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800 font-medium">
               <span>💰</span> Avg. {MONEY_SYMBOL}{Math.round(stats.averageTripCost).toLocaleString()} / trip
             </span>
           )}

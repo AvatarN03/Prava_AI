@@ -171,7 +171,7 @@ export default function EditPostPage() {
                 />
             )}
             {/* fallback gradient when no image */}
-            {!imagePreview && (
+            {!post.images?.[post.mainImageIndex]?.preview && (
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-950 to-indigo-950" />
             )}
 
@@ -179,10 +179,10 @@ export default function EditPostPage() {
             <div className="absolute inset-0 bg-black/55" />
 
             {/* Scrollable content */}
-            <div className="relative z-10 p-6 space-y-6">
+            <div className="relative z-10 p-3 md:p-6 space-y-6">
 
                 {/* Top bar */}
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <Button
                         variant="outline"
                         onClick={() => router.push(`/zone/${id}/view`)}
@@ -194,8 +194,8 @@ export default function EditPostPage() {
                 </div>
 
                 {/* Card */}
-                <div className="rounded-xl bg-white/10 dark:bg-black/30 backdrop-blur-sm p-6 md:p-8 space-y-6">
-                    <h2 className="text-3xl font-bold text-white">Edit Post</h2>
+                <div className="rounded-xl bg-white/10 dark:bg-black/30 backdrop-blur-sm p-4 md:p-8 space-y-6">
+                    <h2 className="text-2xl md:text-3xl font-bold text-white">Edit Post</h2>
 
                     <form onSubmit={handleSubmit}>
                         {/* Two-column on md+, single column on mobile */}
@@ -244,7 +244,7 @@ export default function EditPostPage() {
                                         Content *
                                     </label>
                                     {/* Formatting toolbar */}
-                                    <div className="flex gap-2 p-2 bg-white/10 rounded-t-md border border-b-0 border-white/20">
+                                    <div className="flex flex-wrap gap-2 p-2 bg-white/10 rounded-t-md border border-b-0 border-white/20">
                                         {[
                                             { tag: 'bold', Icon: Bold },
                                             { tag: 'italic', Icon: Italic },
@@ -260,7 +260,7 @@ export default function EditPostPage() {
                                                 <Icon className="w-4 h-4" />
                                             </button>
                                         ))}
-                                        <span className="text-xs text-gray-400 self-center ml-2">
+                                        <span className="hidden sm:inline text-xs text-gray-400 self-center ml-2">
                                             Select text then click to format
                                         </span>
                                     </div>
